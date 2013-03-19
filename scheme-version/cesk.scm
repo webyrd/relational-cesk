@@ -101,7 +101,7 @@
       [(set!-k ,x ,env ,k)
        (let ((v (car v/s))
              (s^ (cdr v/s)))
-         (let ((loc (apply-env env x))) 
+         (let ((loc (apply-env env x)))
            (apply-k k (answer (void) (ext-s loc v s^)))))]
       [(begin-inner-k ,k)
        (let ((v2 (car v/s))

@@ -79,6 +79,19 @@
         ((=/= y x)
          (lookup-env-auxo x `(,y* ,addr-e*) `(,addr-s* ,v-s*) t))))))
 
+(define lookup-env-only-auxo
+  (lambda (x env t)
+    (fresh (y y* addr-e addr-e*)      
+      (symbolo x)
+      (symbolo y)
+      (numbero t)
+      (numbero addr-e)
+      (== `((,y . ,y*) (,addr-e . ,addr-e*)) env)
+      (conde
+        ((== y x) (== addr-e t))
+        ((=/= y x)
+         (lookup-env-only-auxo x `(,y* ,addr-e*) t))))))
+
 (define lookup-store-auxo
   (lambda (addr store t)
     (fresh (addr-s addr-s* v-s v-s*)
