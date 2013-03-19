@@ -67,6 +67,10 @@
   (lambda (k v/s)
     (pmatch k
       [(empty-k) v/s]
+      [(throw-k ,v-e ,env^ ,s^)
+       (let ((cc (car v/s))
+             (s (cdr v/s)))
+         (eval-exp-aux v-e env^ s cc))]
       [(if-k ,c ,a ,env ,k)
        (let ((v (car v/s))
              (s (cdr v/s)))
@@ -153,6 +157,10 @@
   (lambda (e2 env k)
     `(subtraction-outer-k ,e2 ,env ,k)))
 
+(define throw-k
+  (lambda (v-e env s)
+    `(throw-k ,v-e ,env ,s)))
+
 (define multiplication-inner-k
   (lambda (v1 k)
     `(multiplication-inner-k ,v1 ,k)))
@@ -212,7 +220,14 @@
       ((- ,e1 ,e2) (guard (not-in-env '- env))
        (eval-exp-aux e1 env s (subtraction-outer-k e2 env k)))
       ((* ,e1 ,e2) (guard (not-in-env '* env))
-       (eval-exp-aux e1 env s (multiplication-outer-k e2 env k)))
+       (eval-exp-aux e1 env s (multiplication-outer-k e2 env k)))      
+      ((throw ,cc-e ,v-e)
+       (eval-exp-aux cc-e env s (throw-k v-e env s)))
+      ((letcc ,cc ,body)
+       (let ((loc (new-loc s)))
+         (let ((env^ (ext-env cc loc env)))
+           (let ((s^ (ext-s loc k s)))
+             (eval-exp-aux body env^ s^ k)))))            
       ((lambda (,x) ,body) (guard (not-in-env 'lambda env))
        (apply-k k (answer (make-proc x body env) s)))
       ((set! ,x ,rhs) (guard (not-in-env 'set! env))
@@ -265,6 +280,7 @@
          (let ((v (walk*-v t s)))
            (cons v (map-lookup-address addr-res s))))])))
 
+
 (test "lookup"
   (let ((env (ext-env 'a (new-loc empty-s) empty-env))
         (s (ext-s (new-loc empty-s) 7 empty-s)))
@@ -298,7 +314,7 @@
             (ext-s (new-loc empty-s) 'foo empty-s)
             empty-k)
   'foo)
-
+ 
 (test "cesk-identity"
   (eval-exp '((lambda (x) x) 5)
             empty-env
@@ -312,6 +328,43 @@
             empty-s
             empty-k)
   'foo)
+
+(test "letcc/throw-0"
+  (eval-exp '(letcc k k)
+            empty-env
+            empty-s
+            empty-k)
+  empty-k)
+
+(test "letcc/throw-0b"
+  (eval-exp '(letcc k 1)
+            empty-env
+            empty-s
+            empty-k)
+  '1)
+
+(test "letcc/throw-0c"
+  (eval-exp '(letcc k (throw k 1))
+            empty-env
+            empty-s
+            empty-k)
+  '1)
+
+(test "letcc/throw-1"
+  (eval-exp '(letcc k (* 5 (throw k (* 2 6))))
+            empty-env
+            empty-s
+            empty-k)
+  '12)
+
+(test "letcc/throw-2"
+  (eval-exp '(letcc k
+               ((quote 5)
+                (throw k (quote 7))))
+            empty-env
+            empty-s
+            empty-k)
+  '7)
 
 (test "cesk-set!"
   (eval-exp '((lambda (x) (begin (set! x 5) x)) 6)
