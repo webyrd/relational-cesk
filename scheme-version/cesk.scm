@@ -67,7 +67,7 @@
   (lambda (k v/s)
     (pmatch k
       [(empty-k) v/s]
-      [(throw-k ,v-e ,env^ ,s^)
+      [(throw-k ,v-e ,env^)
        (let ((cc (car v/s))
              (s (cdr v/s)))
          (eval-exp-aux v-e env^ s cc))]
@@ -158,8 +158,8 @@
     `(subtraction-outer-k ,e2 ,env ,k)))
 
 (define throw-k
-  (lambda (v-e env s)
-    `(throw-k ,v-e ,env ,s)))
+  (lambda (v-e env)
+    `(throw-k ,v-e ,env)))
 
 (define multiplication-inner-k
   (lambda (v1 k)
@@ -222,7 +222,7 @@
       ((* ,e1 ,e2) (guard (not-in-env '* env))
        (eval-exp-aux e1 env s (multiplication-outer-k e2 env k)))      
       ((throw ,cc-e ,v-e)
-       (eval-exp-aux cc-e env s (throw-k v-e env s)))
+       (eval-exp-aux cc-e env s (throw-k v-e env)))
       ((letcc ,cc ,body)
        (let ((loc (new-loc s)))
          (let ((env^ (ext-env cc loc env)))
