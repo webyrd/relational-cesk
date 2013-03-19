@@ -53,10 +53,11 @@
          (== `(,p . ,s^) v/s)
 
 ; this isn't related to v-out, but p had better be a closure
+;;; ** this fail-fast optimization is unsound in the presence of
+;;; letcc/throw or call/cc! **
          (fresh (x body env^)
            (== `(closure ,x ,body ,env^) p))
-         
-         
+
          (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out
          )]
       [(fresh (v k v* s^^ v-out-ignore)
