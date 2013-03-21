@@ -80,7 +80,7 @@
     (conde
       [(== y x) (== addr-e t)]
       [(!= y x)
-        (lookup-env-auxo x [y* addr-e*] [addr-s* v-s*] t)])))
+       (lookup-env-auxo x [y* addr-e*] [addr-s* v-s*] t)])))
 
 (defn lookup-env-only-auxo
   [x env t]
@@ -93,7 +93,7 @@
     (conde
       [(== y x) (== addr-e t)]
       [(!= y x)
-        (lookup-env-only-auxo x [y* addr-e*] t)])))
+       (lookup-env-only-auxo x [y* addr-e*] t)])))
 
 (defn lookup-store-auxo
   [addr store t]
