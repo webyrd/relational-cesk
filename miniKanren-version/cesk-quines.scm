@@ -135,6 +135,7 @@
          )]
       [(fresh (x body)
          (== `(lambda (,x) ,body) exp)
+         (symbolo x) ; interesting: adding this symbolo constraint increases the runtime by ~7%
          (not-in-envo 'lambda env)
          (== (make-proc x body env) v-out) ; v-out
          (apply-ko k (answer (make-proc x body env) s) out v-out))]
@@ -300,7 +301,7 @@
        k
        val)
       (== `(,expr ,env ,store ,k ,val) q)))
-  `((('_.0 (_.1 _.2) _.3 (empty-k) _.0)
+  '((('_.0 (_.1 _.2) _.3 (empty-k) _.0)
      (absento (closure _.0) '_.1))
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.2 . _.4) (_.5 . _.6))
@@ -308,9 +309,7 @@
           _.5)
      (num _.2)
      (sym _.0))
-;;; interesting 1    
-
-    (((quote _.0)
+    (('_.0
       (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
@@ -321,13 +320,12 @@
      (=/= ((_.5 quote)))
      (sym _.5)
      (absento (closure _.0) '_.1 '_.6))
-
-;;; interesting 2  
     (((lambda (_.0) _.1)
       (_.2 _.3)
       _.4
       (empty-k)
       (closure _.0 _.1 (_.2 _.3)))
+     (sym _.0)
      (absento (lambda _.2)))
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
@@ -344,7 +342,6 @@
      (=/= ((_.0 _.1)))
      (num _.3 _.4 _.6)
      (sym _.0 _.1))
-;;; interesting 3
     (('(_.0 . _.1)
       (_.2 _.3)
       (_.4 _.5)
@@ -356,7 +353,6 @@
      (=/= ((_.6 quote)))
      (sym _.6)
      (absento (closure _.0) (closure _.1) '_.2 '_.7))
-;;; interesting 4
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
@@ -366,7 +362,7 @@
        _.0)
       _.0)
      (sym _.5)
-     (absento (closure _.0) '_.1))    
+     (absento (closure _.0) '_.1))
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
@@ -693,7 +689,7 @@
           (closure _.5 _.6 ((_.7 . _.8) (_.9 . _.10))))
      (=/= ((_.2 _.9)) ((_.7 lambda)))
      (num _.2 _.9)
-     (sym _.0 _.7)
+     (sym _.0 _.5 _.7)
      (absento (_.9 _.4) (lambda _.8)))
     (((lambda (_.0) _.1)
       (_.2 _.3)
@@ -703,10 +699,10 @@
        (list-aux-inner-k closure (empty-k))
        (_.0 _.1 (_.2 _.3)))
       (closure _.0 _.1 (_.2 _.3)))
-     (=/= ((_.6 quote)))
-     (sym _.6)
-     (absento (closure _.0) (closure _.1) (closure _.2)
-              (closure _.3) (lambda _.2) '_.7))
+     (=/= ((_.0 closure)) ((_.6 quote)))
+     (sym _.0 _.6)
+     (absento (closure _.1) (closure _.2) (closure _.3)
+              (lambda _.2) '_.7))
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.2 . _.4) (_.5 . _.6))
           (application-inner-k
@@ -769,7 +765,7 @@
        (empty-k)
        (closure _.0 _.1 (_.2 _.3)))
       (closure _.0 _.1 (_.2 _.3)))
-     (sym _.6)
+     (sym _.0 _.6)
      (absento (lambda _.2)))
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
@@ -846,7 +842,7 @@
       _.0)
      (=/= ((_.10 quote)) ((_.5 lambda)))
      (num _.13)
-     (sym _.10 _.5)
+     (sym _.10 _.5 _.6)
      (absento (_.13 _.3) (closure _.0) (lambda _.8) '_.1 '_.11))
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.4 _.5 _.2 . _.6) (_.7 _.8 _.9 . _.10))
@@ -890,7 +886,7 @@
           '(lambda (x) (list x (list 'quote x)))))
       (lambda (_.1) _.2))
      (=/= ((_.0 quote)))
-     (sym _.0))
+     (sym _.0 _.1))
     (list
      '(lambda (x) (list x (list 'quote x)))
      (list 'quote '(lambda (x) (list x (list 'quote x)))))
@@ -924,13 +920,12 @@
     (fresh (expr v)
       (evalo expr v)
       (== `(,expr ,v) q)))
-  '((('_.0 _.0) (absento (closure _.0)))
-    ((lambda (_.0) _.1) (closure _.0 _.1 (() ())))
-    ((list) ())
-    (((list '_.0) (_.0)) (absento (closure _.0)))
+  '((('_.0 _.0) (absento (closure _.0))) (((lambda (_.0) _.1) (closure _.0 _.1 (() ()))) (sym _.0))
+    ((list) ()) (((list '_.0) (_.0)) (absento (closure _.0)))
     (((list '_.0 '_.1) (_.0 _.1))
      (absento (closure _.0) (closure _.1)))
-    ((list (lambda (_.0) _.1)) ((closure _.0 _.1 (() ()))))
+    (((list (lambda (_.0) _.1)) ((closure _.0 _.1 (() ()))))
+     (sym _.0))
     ((((lambda (_.0) '_.1) '_.2) _.1)
      (=/= ((_.0 quote)))
      (sym _.0)
@@ -943,7 +938,7 @@
       (closure _.1 _.2 ((_.0) (_.4))))
      (=/= ((_.0 lambda)))
      (num _.4)
-     (sym _.0)
+     (sym _.0 _.1)
      (absento (closure _.3)))))
 
 (test "cesk-quinec-for-real"
