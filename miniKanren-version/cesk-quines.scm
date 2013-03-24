@@ -52,9 +52,35 @@
          (== `(application-outer-k ,rand ,env ,k ,v-out^) k^)
          (== `(,p . ,s^) v/s)
 
-; this isn't related to v-out, but p had better be a closure
-;;; ** this fail-fast optimization is unsound in the presence of
-;;; letcc/throw or call/cc! **
+;;; this isn't related to v-out, but p had better be a closure
+;;;         
+;;; ** the naive version of this fail-fast optimization is unsound in
+;;; the presence of letcc/throw or call/cc! **
+;;;
+;;; This optimization results in different answer ordering. This makes
+;;; testing trickier.
+;;;
+;;; A couple of rough benchmarks, using the version of this file shown at the Confo:
+;;;         
+;;; with this optimization:
+;;; (time (load "cesk-quines.scm"))
+;;;    2538 collections
+;;;    73359 ms elapsed cpu time, including 4756 ms collecting
+;;;    73404 ms elapsed real time, including 4740 ms collecting
+;;;    21382279120 bytes allocated, including 21277591440 bytes reclaimed
+;;;
+;;; without the optimization--almost 5 times slower, and allocates more than
+;;; 4 times as much memory.         
+;;;
+;;; (time (load "cesk-quines-no-fail-fast.scm"))
+;;;    10507 collections
+;;;    352053 ms elapsed cpu time, including 62634 ms collecting
+;;;    352250 ms elapsed real time, including 62614 ms collecting
+;;;    88514683712 bytes allocated, including 87976358640 bytes reclaimed
+;;;
+;;; To be meaningful, these benchmarks should be run under full Chez with optimizations and libraries.
+;;; Still, the optimization clearly prunes the search tree in a beneficial way.
+
          (fresh (x body env^)
            (== `(closure ,x ,body ,env^) p))
 
@@ -283,7 +309,8 @@
      (num _.2)
      (sym _.0))
 ;;; interesting 1    
-    (('_.0
+
+    (((quote _.0)
       (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
@@ -294,6 +321,7 @@
      (=/= ((_.5 quote)))
      (sym _.5)
      (absento (closure _.0) '_.1 '_.6))
+
 ;;; interesting 2  
     (((lambda (_.0) _.1)
       (_.2 _.3)
