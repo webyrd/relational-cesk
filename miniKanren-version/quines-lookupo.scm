@@ -81,7 +81,7 @@
 
 (define lookup-env-only-auxo
   (lambda (x env t)
-    (fresh (y y* addr-e addr-e*)      
+    (fresh (y y* addr-e addr-e*)
       (symbolo x)
       (symbolo y)
       (numbero t)
