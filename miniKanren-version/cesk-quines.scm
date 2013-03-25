@@ -48,7 +48,7 @@
       [(fresh (p k a s^^ v-out^)
          (== (application-inner-k p k v-out^) k^)
          (== (answer a s^^) v/s)
-         (apply-proco p a s^^ k out v-out^) ; v-out
+         (apply-proco p a s^^ k out v-out^) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
          )]
       [(fresh (rand env k p s^ v-out^ v-out-ignore)
          (== (application-outer-k rand env k v-out^) k^)
