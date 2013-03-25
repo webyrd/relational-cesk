@@ -32,7 +32,7 @@
       (ext-envo x addr env env^)
       (ext-storeo addr a s^ s^^)
       (numbero addr)
-      (not-in-storeo addr s^)
+      (not-in-storeo addr s^) ; not-in-storeo also calls numbero on addr--is this redundancy desireable?
       (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out
       )))
 
@@ -140,6 +140,8 @@
 
 (define empty-k '(empty-k))
 
+;;; Is it necessary or desirable to make apply-ko representation-independent w.r.t. continuations?
+;;; Not sure there is much benefit other than consistency, although that may be sufficient.
 (define application-inner-k
   (lambda (p k v-out^)
     `(application-inner-k ,p ,k ,v-out^)))
@@ -161,16 +163,16 @@
     (conde
       [(fresh (datum ans)
          (== `(quote ,datum) exp)
-         (not-in-envo 'quote env)
-         (absento 'closure datum)
          (== datum v-out) ; v-out
          (answero datum s ans)
+         (absento 'closure datum)
+         (not-in-envo 'quote env)
          (apply-ko k ans out v-out))]
       [(fresh (v ans)
-         (symbolo exp)
          (== v v-out) ; v-out
-         (lookupo exp env s v)
+         (symbolo exp)
          (answero v s ans)
+         (lookupo exp env s v)
          (apply-ko k ans out v-out))]
       [(fresh (rator rand v-out-ignore)
          (== `(,rator ,rand) exp)
@@ -178,10 +180,10 @@
          )]
       [(fresh (x body ans)
          (== `(lambda (,x) ,body) exp)
-         (symbolo x) ; interesting: adding this symbolo constraint increases the runtime by ~7%
-         (not-in-envo 'lambda env)
          (== (make-proc x body env) v-out) ; v-out
          (answero (make-proc x body env) s ans)
+         (not-in-envo 'lambda env)
+         (symbolo x) ; interesting: adding this symbolo constraint increased the runtime by ~7%
          (apply-ko k ans out v-out))]
       [(fresh (e*)
          (== `(list . ,e*) exp)
