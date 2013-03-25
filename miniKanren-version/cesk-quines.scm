@@ -345,7 +345,7 @@
      (sym _.6)
      (absento (closure _.0) (closure _.1) (quote _.2) (quote _.7)))
 
-    (('_.0
+    (((quote _.0)
       (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
@@ -354,20 +354,21 @@
        _.0)
       _.0)
      (sym _.5)
-     (absento (closure _.0) '_.1))
-    (('_.0
+     (absento (closure _.0) (quote _.1)))
+    
+    (((quote _.0)
       (_.1 _.2)
       (_.3 _.4)
       (list-aux-inner-k
        _.5
        (application-inner-k
-        (closure _.6 '_.0 (_.7 _.8))
+        (closure _.6 (quote _.0) (_.7 _.8))
         (empty-k)
         _.0))
       _.0)
      (=/= ((_.6 quote)))
      (sym _.6)
-     (absento (closure _.0) '_.1 '_.7))
+     (absento (closure _.0) (quote _.1) (quote _.7)))
 
     ((_.0
       ((_.0 . _.1) (_.2 . _.3))
@@ -382,28 +383,31 @@
      (sym _.0 _.7)
      (absento (closure _.5) '_.8))
 
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.4 _.5 _.2 . _.6) (_.7 _.8 _.9 . _.10))
-          (empty-k)
-          _.9)
+    ((_.0
+      ((_.0 . _.1) (_.2 . _.3))
+      ((_.4 _.5 _.2 . _.6) (_.7 _.8 _.9 . _.10))
+      (empty-k)
+      _.9)
      (=/= ((_.2 _.4)) ((_.2 _.5)))
      (num _.2 _.4 _.5)
      (sym _.0))
-    (('_.0
+    
+    (((quote _.0)
       (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
-       (closure _.5 '_.6 (_.7 _.8))
+       (closure _.5 (quote _.6) (_.7 _.8))
        (application-inner-k
-        (closure _.9 '_.0 (_.10 _.11))
+        (closure _.9 (quote _.0) (_.10 _.11))
         (empty-k)
         _.0)
        _.6)
       _.0)
      (=/= ((_.5 quote)) ((_.9 quote)))
      (sym _.5 _.9)
-     (absento (closure _.0) (closure _.6) '_.1 '_.10 '_.7))
-    (('_.0
+     (absento (closure _.0) (closure _.6) (quote _.1) (quote _.10) (quote _.7)))
+    
+    (((quote _.0)
       (_.1 _.2)
       ((_.3 . _.4) (_.5 . _.6))
       (application-inner-k
@@ -414,7 +418,8 @@
      (=/= ((_.10 _.3)) ((_.7 _.8)))
      (num _.10 _.3)
      (sym _.7 _.8)
-     (absento (_.10 _.4) (closure _.0) '_.1))
+     (absento (_.10 _.4) (closure _.0) (quote _.1)))
+    
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
           (application-inner-k
