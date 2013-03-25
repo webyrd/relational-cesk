@@ -38,13 +38,12 @@
       )))
 
 (define apply-ko
-  (lambda (k^ v/s out v-out)
+  (lambda (k^ v/s out)
     (conde
       [(fresh (v s)
          (== empty-k k^)
          (== v/s out)
-         (== (answer v s) v/s)
-         (== v v-out)) ; v-out
+         (== (answer v s) v/s))
        ]
       [(fresh (p k a s^^ v-out^)
          (== (application-inner-k p k v-out^) k^)
@@ -67,12 +66,11 @@
 
          (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out
          )]
-      [(fresh (v k v* s^^ v-out-ignore ans)
+      [(fresh (v k v* s^^ ans)
          (== (list-aux-inner-k v k) k^)
          (== (answer v* s^^) v/s)
-         (== v* v-out) ; v-out
          (== (answer (cons v v*) s^^) ans)
-         (apply-ko k ans out v-out-ignore))]
+         (apply-ko k ans out))]
       [(fresh (e* env k v s^ e*-rest ignore v-out-rest)
          (== (list-aux-outer-k e* env k v-out-rest) k^)
          (== (answer v s^) v/s)
@@ -102,26 +100,26 @@
 (define eval-exp-auxo
   (lambda (exp env s k out v-out)
     (conde
-      [(fresh (datum ans v-out-ignore)
+      [(fresh (datum ans)
          (== `(quote ,datum) exp)
          (== datum v-out) ; v-out
          (== (answer datum s) ans)
          (absento 'closure datum)
          (not-in-envo 'quote env)
-         (apply-ko k ans out v-out-ignore))]
-      [(fresh (x body ans v-out-ignore)
+         (apply-ko k ans out))]
+      [(fresh (x body ans)
          (== `(lambda (,x) ,body) exp)
          (== (make-proc x body env) v-out) ; v-out
          (== (answer (make-proc x body env) s) ans)
          (not-in-envo 'lambda env)
          (symbolo x) ; interesting: adding this symbolo constraint increased the runtime by ~7%
-         (apply-ko k ans out v-out-ignore))]
-      [(fresh (v ans v-out-ignore)
+         (apply-ko k ans out))]
+      [(fresh (v ans)
          (== v v-out) ; v-out
          (symbolo exp)
          (== (answer v s) ans)
          (lookupo exp env s v)
-         (apply-ko k ans out v-out-ignore))]
+         (apply-ko k ans out))]
       [(fresh (rator rand v-out-ignore)
          (== `(,rator ,rand) exp)
          (eval-exp-auxo rator env s (application-outer-k rand env k v-out) out v-out-ignore) ; v-out
@@ -135,11 +133,11 @@
 (define list-auxo
   (lambda (e* env s k out v-out*)
     (conde
-      [(fresh (ans v-out-ignore)
+      [(fresh (ans)
          (== '() e*)
          (== '() v-out*) ; v-out*
          (== (answer '() s) ans)
-         (apply-ko k ans out v-out-ignore))]
+         (apply-ko k ans out))]
       [(fresh (e ignore ignore^ v-out v-out-rest)
          (== `(,e . ,ignore) e*)
          (== `(,v-out . ,v-out-rest) v-out*) ; v-out*
@@ -1049,6 +1047,8 @@
      (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
      _.0)))
 
+;;; This test currently fails, with the run expression returning the empty list
+;;; I think this test should pass, though.
 (test "cesk-application-inner-k-2"
   (run* (q)
     (fresh (expr env store k val env^ v-out)
