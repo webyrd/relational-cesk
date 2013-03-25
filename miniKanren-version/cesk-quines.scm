@@ -29,10 +29,10 @@
   (lambda (p a s^ k^ out v-out)
     (fresh (x body env addr env^ s^^)
       (make-proco x body env p)
-      (numbero addr)
-      (not-in-storeo addr s^)
       (ext-envo x addr env env^)
       (ext-storeo addr a s^ s^^)
+      (numbero addr)
+      (not-in-storeo addr s^)
       (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out
       )))
 
