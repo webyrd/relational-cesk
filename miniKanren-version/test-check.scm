@@ -9,3 +9,10 @@
              (errorf 'test
                "Failed: ~a~%Expected: ~a~%Computed: ~a~%"
                'tested-expression expected produced)))))))
+
+(define-syntax test-disable
+  (syntax-rules ()
+    ((_ title tested-expression expected-result)
+     (begin
+       (printf "Disable testing ~s\n" title)
+       #t))))
