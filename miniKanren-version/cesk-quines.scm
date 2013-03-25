@@ -64,7 +64,7 @@
          (fresh (x body env^)
            (== (make-proc x body env^) p))
 
-         (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out
+         (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
          )]
       [(fresh (v k v* s^^ ans)
          (== (list-aux-inner-k v k) k^)
