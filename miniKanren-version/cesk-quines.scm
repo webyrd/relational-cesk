@@ -298,6 +298,11 @@
      (num _.2)
      (sym _.0))
 
+;;; This answer, and several following it, appears to be correct, but
+;;; overly specific.  Since the argument to the closure is ignored in
+;;; the procedure call, there is no reason for both the expression and
+;;; the body of the closure to refer to the same quoted term.  At a
+;;; minimum, I would expect the body of the closure to be (quote _.1).
     (((quote _.0)
       (_.1 _.2)
       (_.3 _.4)
@@ -406,7 +411,8 @@
      (=/= ((_.5 quote)) ((_.9 quote)))
      (sym _.5 _.9)
      (absento (closure _.0) (closure _.6) (quote _.1) (quote _.10) (quote _.7)))
-    
+
+;;; I don't understand this answer.    
     (((quote _.0)
       (_.1 _.2)
       ((_.3 . _.4) (_.5 . _.6))
