@@ -2,7 +2,9 @@
 (load "quines-lookupo.scm")
 (load "test-check.scm")
 
-(define answer cons)
+(define answero
+  (lambda (v s ans)
+    (== `(,v . ,s) ans)))
 
 (define not-in-envo
 ;;; with the old absento, this definition only works if x is a ground symbol
@@ -124,11 +126,12 @@
 
          (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out
          )]
-      [(fresh (v k v* s^^ v-out-ignore)
+      [(fresh (v k v* s^^ v-out-ignore ans)
          (== `(list-aux-inner-k ,v ,k) k^)
          (== `(,v* . ,s^^) v/s)
          (== v* v-out) ; v-out
-         (apply-ko k (answer (cons v v*) s^^) out v-out-ignore))]
+         (answero (cons v v*) s^^ ans)
+         (apply-ko k ans out v-out-ignore))]
       [(fresh (e* env k v s^ e*-rest ignore v-out-rest)
          (== `(list-aux-outer-k ,e* ,env ,k ,v-out-rest) k^)
          (== `(,v . ,s^) v/s)
@@ -156,27 +159,30 @@
 (define eval-exp-auxo
   (lambda (exp env s k out v-out)
     (conde
-      [(fresh (datum)
+      [(fresh (datum ans)
          (== `(quote ,datum) exp)
          (not-in-envo 'quote env)
          (absento 'closure datum)
          (== datum v-out) ; v-out
-         (apply-ko k (answer datum s) out v-out))]
-      [(fresh (v)
+         (answero datum s ans)
+         (apply-ko k ans out v-out))]
+      [(fresh (v ans)
          (symbolo exp)
          (== v v-out) ; v-out
          (lookupo exp env s v)
-         (apply-ko k (answer v s) out v-out))]
+         (answero v s ans)
+         (apply-ko k ans out v-out))]
       [(fresh (rator rand v-out-ignore)
          (== `(,rator ,rand) exp)
          (eval-exp-auxo rator env s (application-outer-k rand env k v-out) out v-out-ignore) ; v-out
          )]
-      [(fresh (x body)
+      [(fresh (x body ans)
          (== `(lambda (,x) ,body) exp)
          (symbolo x) ; interesting: adding this symbolo constraint increases the runtime by ~7%
          (not-in-envo 'lambda env)
          (== (make-proc x body env) v-out) ; v-out
-         (apply-ko k (answer (make-proc x body env) s) out v-out))]
+         (answero (make-proc x body env) s ans)
+         (apply-ko k ans out v-out))]
       [(fresh (e*)
          (== `(list . ,e*) exp)
          (not-in-envo 'list env)
@@ -186,10 +192,11 @@
 (define list-auxo
   (lambda (e* env s k out v-out*)
     (conde
-      [(fresh (v-out-ignore)
+      [(fresh (v-out-ignore ans)
          (== '() e*)
          (== '() v-out*) ; v-out*
-         (apply-ko k (answer '() s) out v-out-ignore))]
+         (answero '() s ans)
+         (apply-ko k ans out v-out-ignore))]
       [(fresh (e ignore ignore^ v-out v-out-rest)
          (== `(,e . ,ignore) e*)
          (== `(,v-out . ,v-out-rest) v-out*) ; v-out*
@@ -198,7 +205,7 @@
 (define eval-expo
   (lambda (exp env s k out)
     (fresh (ans v s^ ignore)
-      (== (answer v s^) ans)
+      (answero v s^ ans)
       (== out v)
       (eval-exp-auxo exp env s k ans v))))
 
