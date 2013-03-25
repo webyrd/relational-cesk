@@ -21,14 +21,14 @@
       (store->addr*o store addr*)
       (absento addr addr*))))
 
-(define make-proc
-  (lambda (x body env)    
-    `(closure ,x ,body ,env)))
+(define make-proco
+  (lambda (x body env proc)
+    (== `(closure ,x ,body ,env) proc)))
 
 (define apply-proco
   (lambda (p a s^ k^ out v-out)
     (fresh (x body env addr env^ s^^)
-      (== `(closure ,x ,body ,env) p)
+      (make-proco x body env p)
       (numbero addr)
       (not-in-storeo addr s^)
       (ext-envo x addr env env^)
@@ -122,7 +122,7 @@
 ;;;    4674773648 bytes allocated, including 4477361232 bytes reclaimed
          
          (fresh (x body env^)
-           (== `(closure ,x ,body ,env^) p))
+           (make-proco x body env^ p))
 
          (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out
          )]
