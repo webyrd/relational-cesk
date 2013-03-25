@@ -2,9 +2,9 @@
 (load "quines-lookupo.scm")
 (load "test-check.scm")
 
-(define answero
-  (lambda (v s ans)
-    (== `(,v . ,s) ans)))
+(define answer
+  (lambda (v s)
+    (cons v s)))
 
 (define not-in-envo
 ;;; with the old absento, this definition only works if x is a ground symbol
@@ -21,14 +21,14 @@
       (store->addr*o store addr*)
       (absento addr addr*))))
 
-(define make-proco
-  (lambda (x body env proc)
-    (== `(closure ,x ,body ,env) proc)))
+(define make-proc
+  (lambda (x body env)
+    `(closure ,x ,body ,env)))
 
 (define apply-proco
   (lambda (p a s^ k^ out v-out)
     (fresh (x body env addr env^ s^^)
-      (make-proco x body env p)
+      (== (make-proc x body env) p)
       (ext-envo x addr env env^)
       (ext-storeo addr a s^ s^^)
       (numbero addr)
@@ -43,17 +43,17 @@
       [(fresh (v s)
          (== empty-k k^)
          (== v/s out)
-         (answero v s v/s)
+         (== (answer v s) v/s)
          (== v v-out)) ; v-out
        ]
       [(fresh (p k a s^^ v-out^)
-         (== `(application-inner-k ,p ,k ,v-out^) k^)
-         (answero a s^^ v/s)
+         (== (application-inner-k p k v-out^) k^)
+         (== (answer a s^^) v/s)
          (apply-proco p a s^^ k out v-out^) ; v-out
          )]
       [(fresh (rand env k p s^ v-out^ v-out-ignore)
-         (== `(application-outer-k ,rand ,env ,k ,v-out^) k^)
-         (answero p s^ v/s)
+         (== (application-outer-k rand env k v-out^) k^)
+         (== (answer p s^) v/s)
 
 ;;; this isn't related to v-out, but p had better be a closure
 ;;;
@@ -63,19 +63,19 @@
 ;;; This optimization results in different answer ordering. This makes
 ;;; testing trickier.         
          (fresh (x body env^)
-           (make-proco x body env^ p))
+           (== (make-proc x body env^) p))
 
          (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out
          )]
       [(fresh (v k v* s^^ v-out-ignore ans)
-         (== `(list-aux-inner-k ,v ,k) k^)
-         (answero v* s^^ v/s)
+         (== (list-aux-inner-k v k) k^)
+         (== (answer v* s^^) v/s)
          (== v* v-out) ; v-out
-         (answero (cons v v*) s^^ ans)
+         (== (answer (cons v v*) s^^) ans)
          (apply-ko k ans out v-out-ignore))]
       [(fresh (e* env k v s^ e*-rest ignore v-out-rest)
-         (== `(list-aux-outer-k ,e* ,env ,k ,v-out-rest) k^)
-         (answero v s^ v/s)
+         (== (list-aux-outer-k e* env k v-out-rest) k^)
+         (== (answer v s^) v/s)
          (== `(,ignore . ,e*-rest) e*)
          (list-auxo e*-rest env s^ (list-aux-inner-k v k) out v-out-rest))])))
 
@@ -104,25 +104,25 @@
     (conde
       [(fresh (datum ans)
          (== `(quote ,datum) exp)
-         (== datum v-out) ; v-out
-         (answero datum s ans)
+         (== datum v-out) ; v-out     Unifying datum with v-out, and then passing the same v-out to apply-ko, seems problematic
+         (== (answer datum s) ans)
          (absento 'closure datum)
          (not-in-envo 'quote env)
          (apply-ko k ans out v-out))]
       [(fresh (v ans)
-         (== v v-out) ; v-out
+         (== v v-out) ; v-out         Unifying v with v-out, and then passing the same v-out to apply-ko, seems problematic
          (symbolo exp)
-         (answero v s ans)
+         (== (answer v s) ans)
          (lookupo exp env s v)
          (apply-ko k ans out v-out))]
       [(fresh (rator rand v-out-ignore)
          (== `(,rator ,rand) exp)
          (eval-exp-auxo rator env s (application-outer-k rand env k v-out) out v-out-ignore) ; v-out
-         )]
+         )]      
       [(fresh (x body ans)
          (== `(lambda (,x) ,body) exp)
          (== (make-proc x body env) v-out) ; v-out
-         (answero (make-proc x body env) s ans)
+         (== (answer (make-proc x body env) s) ans)
          (not-in-envo 'lambda env)
          (symbolo x) ; interesting: adding this symbolo constraint increased the runtime by ~7%
          (apply-ko k ans out v-out))]
@@ -138,7 +138,7 @@
       [(fresh (ans v-out-ignore)
          (== '() e*)
          (== '() v-out*) ; v-out*
-         (answero '() s ans)
+         (== (answer '() s) ans)
          (apply-ko k ans out v-out-ignore))]
       [(fresh (e ignore ignore^ v-out v-out-rest)
          (== `(,e . ,ignore) e*)
@@ -148,7 +148,7 @@
 (define eval-expo
   (lambda (exp env s k out)
     (fresh (ans s^ v-out)
-      (answero out s^ ans)
+      (== (answer out s^) ans)
       (== out v-out) ; v-out
       (eval-exp-auxo exp env s k ans v-out))))
 
@@ -277,6 +277,59 @@
                    empty-k
                    q)))
   `(x))
+
+
+
+;; (test "cesk-application-inner-k-1"
+;;   (run* (q)
+;;     (fresh (expr env store k val env^ v-out)
+;;       (== `(quote _.0) expr)
+;;       (== `(_.1 _.2) env)
+;;       (== `(_.3 _.4) store)
+;;       (==
+;;        `(application-inner-k
+;;          (closure _.5 (quote _.0) (_.6 _.7))
+;;          (empty-k)
+;;          _.0)
+;;           k)
+;;       (eval-expo
+;;        expr
+;;        env
+;;        store
+;;        k
+;;        val)
+;;       (== `(,expr ,env ,store ,k ,val) q)))
+;;   '(((quote _.0)
+;;      (_.1 _.2)
+;;      (_.3 _.4)
+;;      (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
+;;      _.0)))
+
+;; (test "cesk-application-inner-k-2"
+;;   (run* (q)
+;;     (fresh (expr env store k val env^ v-out)
+;;       (== `(quote _.0) expr)
+;;       (== `(_.1 _.2) env)
+;;       (== `(_.3 _.4) store)
+;;       (==
+;;        `(application-inner-k
+;;          (closure _.5 (quote _.8) (_.6 _.7))
+;;          (empty-k)
+;;          ,v-out)
+;;           k)
+;;       (eval-expo
+;;        expr
+;;        env
+;;        store
+;;        k
+;;        val)
+;;       (== `(,expr ,env ,store ,k ,val) q)))
+;;   '(((quote _.8)
+;;      (_.1 _.2)
+;;      (_.3 _.4)
+;;      (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
+;;      _.8)))
+
 
 ;;; generate k here
 (test "cesk-quinec-bkwards-a"

@@ -106,9 +106,6 @@
 (test "improved-lookupo-0"
   (run 1 (q) (lookupo 'x '(() ()) '(() ()) q))
   '())
-(define make-proc
-  (lambda (x body env)
-    `(closure ,x ,body ,env)))
 
 (test "improved-lookupo-1"
   (run 1 (q) (lookupo 'x '((w x y) (0 1 2)) '((0 1 2) (foo bar baz)) q))
