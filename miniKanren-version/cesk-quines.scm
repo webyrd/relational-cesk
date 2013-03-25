@@ -195,7 +195,7 @@
 (define list-auxo
   (lambda (e* env s k out v-out*)
     (conde
-      [(fresh (v-out-ignore ans)
+      [(fresh (ans v-out-ignore)
          (== '() e*)
          (== '() v-out*) ; v-out*
          (answero '() s ans)
@@ -207,10 +207,10 @@
 
 (define eval-expo
   (lambda (exp env s k out)
-    (fresh (ans v s^ ignore)
-      (answero v s^ ans)
-      (== out v)
-      (eval-exp-auxo exp env s k ans v))))
+    (fresh (ans s^ v-out)
+      (answero out s^ ans)
+      (== out v-out) ; v-out
+      (eval-exp-auxo exp env s k ans v-out))))
 
 (define evalo
   (lambda (exp out)
@@ -357,17 +357,19 @@
           _.5)
      (num _.2)
      (sym _.0))
-    (('_.0
+
+    (((quote _.0)
       (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
-       (closure _.5 '_.0 (_.6 _.7))
+       (closure _.5 (quote _.0) (_.6 _.7))
        (empty-k)
        _.0)
       _.0)
      (=/= ((_.5 quote)))
      (sym _.5)
      (absento (closure _.0) '_.1 '_.6))
+
     (((lambda (_.0) _.1)
       (_.2 _.3)
       _.4
@@ -424,17 +426,20 @@
      (=/= ((_.6 quote)))
      (sym _.6)
      (absento (closure _.0) '_.1 '_.7))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.2 . _.4) (_.5 . _.6))
-          (application-inner-k
-           (closure _.7 '_.5 (_.8 _.9))
-           (empty-k)
-           _.5)
-          _.5)
+
+    ((_.0
+      ((_.0 . _.1) (_.2 . _.3))
+      ((_.2 . _.4) (_.5 . _.6))
+      (application-inner-k
+       (closure _.7 (quote _.5) (_.8 _.9))
+       (empty-k)
+       _.5)
+      _.5)
      (=/= ((_.7 quote)))
      (num _.2)
      (sym _.0 _.7)
      (absento (closure _.5) '_.8))
+
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.4 _.5 _.2 . _.6) (_.7 _.8 _.9 . _.10))
           (empty-k)
