@@ -102,26 +102,26 @@
 (define eval-exp-auxo
   (lambda (exp env s k out v-out)
     (conde
-      [(fresh (datum ans)
+      [(fresh (datum ans v-out-ignore)
          (== `(quote ,datum) exp)
-         (== datum v-out) ; v-out     Unifying datum with v-out, and then passing the same v-out to apply-ko, seems problematic
+         (== datum v-out) ; v-out
          (== (answer datum s) ans)
          (absento 'closure datum)
          (not-in-envo 'quote env)
-         (apply-ko k ans out v-out))]
-      [(fresh (x body ans)
+         (apply-ko k ans out v-out-ignore))]
+      [(fresh (x body ans v-out-ignore)
          (== `(lambda (,x) ,body) exp)
          (== (make-proc x body env) v-out) ; v-out
          (== (answer (make-proc x body env) s) ans)
          (not-in-envo 'lambda env)
          (symbolo x) ; interesting: adding this symbolo constraint increased the runtime by ~7%
-         (apply-ko k ans out v-out))]
-      [(fresh (v ans)
-         (== v v-out) ; v-out         Unifying v with v-out, and then passing the same v-out to apply-ko, seems problematic
+         (apply-ko k ans out v-out-ignore))]
+      [(fresh (v ans v-out-ignore)
+         (== v v-out) ; v-out
          (symbolo exp)
          (== (answer v s) ans)
          (lookupo exp env s v)
-         (apply-ko k ans out v-out))]
+         (apply-ko k ans out v-out-ignore))]
       [(fresh (rator rand v-out-ignore)
          (== `(,rator ,rand) exp)
          (eval-exp-auxo rator env s (application-outer-k rand env k v-out) out v-out-ignore) ; v-out
@@ -279,57 +279,6 @@
   `(x))
 
 
-;;; debug-related tests
-;;; trying to understand v-out behavior
-;; (test "cesk-application-inner-k-1"
-;;   (run* (q)
-;;     (fresh (expr env store k val env^ v-out)
-;;       (== `(quote _.0) expr)
-;;       (== `(_.1 _.2) env)
-;;       (== `(_.3 _.4) store)
-;;       (==
-;;        `(application-inner-k
-;;          (closure _.5 (quote _.0) (_.6 _.7))
-;;          (empty-k)
-;;          _.0)
-;;           k)
-;;       (eval-expo
-;;        expr
-;;        env
-;;        store
-;;        k
-;;        val)
-;;       (== `(,expr ,env ,store ,k ,val) q)))
-;;   '(((quote _.0)
-;;      (_.1 _.2)
-;;      (_.3 _.4)
-;;      (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
-;;      _.0)))
-
-;; (test "cesk-application-inner-k-2"
-;;   (run* (q)
-;;     (fresh (expr env store k val env^ v-out)
-;;       (== `(quote _.0) expr)
-;;       (== `(_.1 _.2) env)
-;;       (== `(_.3 _.4) store)
-;;       (==
-;;        `(application-inner-k
-;;          (closure _.5 (quote _.8) (_.6 _.7))
-;;          (empty-k)
-;;          ,v-out)
-;;           k)
-;;       (eval-expo
-;;        expr
-;;        env
-;;        store
-;;        k
-;;        val)
-;;       (== `(,expr ,env ,store ,k ,val) q)))
-;;   '(((quote _.8)
-;;      (_.1 _.2)
-;;      (_.3 _.4)
-;;      (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
-;;      _.8)))
 
 (test "cesk-quinec-bkwards-a"
   (run 50 (q)
@@ -1072,6 +1021,58 @@
           ((_.0 quote)) ((_.1 closure)) ((_.1 list)) ((_.1 quote)))
      (sym _.0 _.1)
      (absento (closure _.2)))))
+
+;;; debug-related tests
+;;; trying to understand v-out behavior
+(test "cesk-application-inner-k-1"
+  (run* (q)
+    (fresh (expr env store k val env^ v-out)
+      (== `(quote _.0) expr)
+      (== `(_.1 _.2) env)
+      (== `(_.3 _.4) store)
+      (==
+       `(application-inner-k
+         (closure _.5 (quote _.0) (_.6 _.7))
+         (empty-k)
+         _.0)
+          k)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '(((quote _.0)
+     (_.1 _.2)
+     (_.3 _.4)
+     (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
+     _.0)))
+
+(test "cesk-application-inner-k-2"
+  (run* (q)
+    (fresh (expr env store k val env^ v-out)
+      (== `(quote _.0) expr)
+      (== `(_.1 _.2) env)
+      (== `(_.3 _.4) store)
+      (==
+       `(application-inner-k
+         (closure _.5 (quote _.8) (_.6 _.7))
+         (empty-k)
+         ,v-out)
+          k)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '(((quote _.8)
+     (_.1 _.2)
+     (_.3 _.4)
+     (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
+     _.8)))
 
 #!eof
 
