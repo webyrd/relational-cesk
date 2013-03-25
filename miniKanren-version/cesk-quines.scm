@@ -75,7 +75,8 @@
          (== (list-aux-outer-k e* env k v-out-rest) k^)
          (== (answer v s^) v/s)
          (== `(,ignore . ,e*-rest) e*)
-         (list-auxo e*-rest env s^ (list-aux-inner-k v k) out v-out-rest))])))
+         (list-auxo e*-rest env s^ (list-aux-inner-k v k) out v-out-rest) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
+         )])))
 
 (define empty-k '(empty-k))
 
