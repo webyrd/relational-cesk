@@ -81,6 +81,44 @@
 ;;; To be meaningful, these benchmarks should be run under full Chez with optimizations and libraries.
 ;;; Still, the optimization clearly prunes the search tree in a beneficial way.
 
+;;; On casper:
+;;;         
+;;; using petite on casper:
+;;; (time (load "cesk-quines.scm"))
+;;;   2723 collections
+;;;   66097 ms elapsed cpu time, including 4484 ms collecting
+;;;   66154 ms elapsed real time, including 4552 ms collecting
+;;;   22941502176 bytes allocated, including 22849338064 bytes reclaimed
+;;;         
+;;; this code (with fail-fast optimization) under full Chez, with no optimization level specified:
+;;; (time (load "cesk-quines.scm"))
+;;;    180 collections
+;;;    19078 ms elapsed cpu time, including 1547 ms collecting
+;;;    19094 ms elapsed real time, including 1547 ms collecting
+;;;    1518008288 bytes allocated, including 1412899056 bytes reclaimed
+;;;
+;;; full chez on casper, optimize level 2
+;;; (time (load "cesk-quines.scm"))
+;;;    180 collections
+;;;    18991 ms elapsed cpu time, including 1538 ms collecting
+;;;    19007 ms elapsed real time, including 1543 ms collecting
+;;;    1518006048 bytes allocated, including 1412883360 bytes reclaimed
+;;;
+;;; full chez on casper, optimize level 3
+;;; (time (load "cesk-quines.scm"))
+;;;    174 collections
+;;;    16894 ms elapsed cpu time, including 1517 ms collecting
+;;;    16910 ms elapsed real time, including 1512 ms collecting
+;;;    1467972880 bytes allocated, including 1357525632 bytes reclaimed
+;;;
+;;; full chez on casper, optimize level 3, **including the thrine test**
+;;;
+;;;(time (load "cesk-quines.scm"))
+;;;    555 collections
+;;;    80863 ms elapsed cpu time, including 6024 ms collecting
+;;;    80911 ms elapsed real time, including 6041 ms collecting
+;;;    4674773648 bytes allocated, including 4477361232 bytes reclaimed
+         
          (fresh (x body env^)
            (== `(closure ,x ,body ,env^) p))
 
@@ -993,7 +1031,8 @@
 
 #!eof
 
-;;; Let thrines run for a while, but it didn't come back
+;;; comes back under full chez in about 60 seconds
+;;; would probably be waiting at least 3x as long under petite, if it doesn't run out of memory.
 (test "thrine"
   (run 1 (x)
     (fresh (p q r)
@@ -1004,16 +1043,9 @@
       (evalo q r)
       (evalo r p)
       (== `(,p ,q ,r) x)))
-  '???)
+  '(((''((lambda (_.0) (list 'quote (list 'quote (list _.0 (list 'quote _.0))))) '(lambda (_.0) (list 'quote (list 'quote (list _.0 (list 'quote _.0))))))
+      '((lambda (_.0) (list 'quote (list 'quote (list _.0 (list 'quote _.0))))) '(lambda (_.0) (list 'quote (list 'quote (list _.0 (list 'quote _.0))))))
+      ((lambda (_.0) (list 'quote (list 'quote (list _.0 (list 'quote _.0))))) '(lambda (_.0) (list 'quote (list 'quote (list _.0 (list 'quote _.0)))))))
+     (=/= ((_.0 closure)) ((_.0 list)) ((_.0 quote)))
+     (sym _.0))))
 
-(test "thrines"
-  (run 1 (out)
-    (fresh (p q r)
-      (=/= p q)
-      (=/= p r)
-      (=/= q r)
-      (evalo p q)
-      (evalo q r)
-      (evalo r p)
-      (== `(,p ,q ,r) out)))
-  '???)
