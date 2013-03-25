@@ -10,17 +10,17 @@
 (define ext-envo
   (lambda (x addr env env^)
     (fresh (x* addr*)
-      (symbolo x)
-      (numbero addr)
       (== `(,x* ,addr*) env)
-      (== `((,x . ,x*) (,addr . ,addr*)) env^))))
+      (== `((,x . ,x*) (,addr . ,addr*)) env^)
+      (symbolo x)
+      (numbero addr))))
 
 (define ext-storeo
   (lambda (addr v store store^)
     (fresh (addr* v*)
-      (numbero addr)
       (== `(,addr* ,v*) store)
-      (== `((,addr . ,addr*) (,v . ,v*)) store^))))
+      (== `((,addr . ,addr*) (,v . ,v*)) store^)
+      (numbero addr))))
 
 (define x*/addr*-envo
   (lambda (x* a* env)
@@ -67,13 +67,13 @@
 ;;; noo/absento.  For now, however, we'll stick with the bound.
   (lambda (x env store t)
     (fresh (y y* addr-e addr-e* addr-s addr-s* v-s v-s*)      
+      (== `((,y . ,y*) (,addr-e . ,addr-e*)) env)
+      (== `((,addr-s . ,addr-s*) (,v-s . ,v-s*)) store)
       (symbolo x)
       (symbolo y)
       (numbero t)
       (numbero addr-e)
       (numbero addr-s)
-      (== `((,y . ,y*) (,addr-e . ,addr-e*)) env)
-      (== `((,addr-s . ,addr-s*) (,v-s . ,v-s*)) store)
       (conde
         ((== y x) (== addr-e t))
         ((=/= y x)
@@ -82,11 +82,11 @@
 (define lookup-env-only-auxo
   (lambda (x env t)
     (fresh (y y* addr-e addr-e*)
+      (== `((,y . ,y*) (,addr-e . ,addr-e*)) env)
       (symbolo x)
       (symbolo y)
       (numbero t)
       (numbero addr-e)
-      (== `((,y . ,y*) (,addr-e . ,addr-e*)) env)
       (conde
         ((== y x) (== addr-e t))
         ((=/= y x)
@@ -95,9 +95,9 @@
 (define lookup-store-auxo
   (lambda (addr store t)
     (fresh (addr-s addr-s* v-s v-s*)
+      (== `((,addr-s . ,addr-s*) (,v-s . ,v-s*)) store)
       (numbero addr)
       (numbero addr-s)
-      (== `((,addr-s . ,addr-s*) (,v-s . ,v-s*)) store)
       (conde
         ((== addr-s addr) (== v-s t))
         ((=/= addr-s addr)
