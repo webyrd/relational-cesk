@@ -42,17 +42,17 @@
       [(fresh (v s)
          (== '(empty-k) k^)
          (== v/s out)
-         (== `(,v . ,s) v/s)
+         (answero v s v/s)
          (== v v-out)) ; v-out
        ]
       [(fresh (p k a s^^ v-out^)
          (== `(application-inner-k ,p ,k ,v-out^) k^)
-         (== `(,a . ,s^^) v/s)
+         (answero a s^^ v/s)
          (apply-proco p a s^^ k out v-out^) ; v-out
          )]
       [(fresh (rand env k p s^ v-out^ v-out-ignore)
          (== `(application-outer-k ,rand ,env ,k ,v-out^) k^)
-         (== `(,p . ,s^) v/s)
+         (answero p s^ v/s)
 
 ;;; this isn't related to v-out, but p had better be a closure
 ;;;         
@@ -128,13 +128,13 @@
          )]
       [(fresh (v k v* s^^ v-out-ignore ans)
          (== `(list-aux-inner-k ,v ,k) k^)
-         (== `(,v* . ,s^^) v/s)
+         (answero v* s^^ v/s)
          (== v* v-out) ; v-out
          (answero (cons v v*) s^^ ans)
          (apply-ko k ans out v-out-ignore))]
       [(fresh (e* env k v s^ e*-rest ignore v-out-rest)
          (== `(list-aux-outer-k ,e* ,env ,k ,v-out-rest) k^)
-         (== `(,v . ,s^) v/s)
+         (answero v s^ v/s)
          (== `(,ignore . ,e*-rest) e*)
          (list-auxo e*-rest env s^ (list-aux-inner-k v k) out v-out-rest))])))
 
