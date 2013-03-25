@@ -332,17 +332,19 @@
      (=/= ((_.0 _.1)))
      (num _.3 _.4 _.6)
      (sym _.0 _.1))
-    (('(_.0 . _.1)
+
+    (((quote (_.0 . _.1))
       (_.2 _.3)
       (_.4 _.5)
       (application-inner-k
-       (closure _.6 '_.1 (_.7 _.8))
+       (closure _.6 (quote _.1) (_.7 _.8))
        (list-aux-inner-k _.0 (empty-k))
        _.1)
       (_.0 . _.1))
      (=/= ((_.6 quote)))
      (sym _.6)
-     (absento (closure _.0) (closure _.1) '_.2 '_.7))
+     (absento (closure _.0) (closure _.1) (quote _.2) (quote _.7)))
+
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
