@@ -41,7 +41,7 @@
   (lambda (k^ v/s out v-out)
     (conde
       [(fresh (v s)
-         (== '(empty-k) k^)
+         (== empty-k k^)
          (== v/s out)
          (answero v s v/s)
          (== v v-out)) ; v-out
