@@ -308,7 +308,7 @@
       _.0)
      (=/= ((_.5 quote)))
      (sym _.5)
-     (absento (closure _.0) '_.1 '_.6))
+     (absento (closure _.0) (quote _.1) (quote _.6)))
 
     (((lambda (_.0) _.1)
       (_.2 _.3)
