@@ -56,72 +56,12 @@
          (answero p s^ v/s)
 
 ;;; this isn't related to v-out, but p had better be a closure
-;;;         
+;;;
 ;;; ** the naive version of this fail-fast optimization is unsound in
 ;;; the presence of letcc/throw or call/cc! **
 ;;;
 ;;; This optimization results in different answer ordering. This makes
-;;; testing trickier.
-;;;
-;;; A couple of rough benchmarks, using the version of this file shown at the Confo:
-;;;         
-;;; with this optimization:
-;;; (time (load "cesk-quines.scm"))
-;;;    2538 collections
-;;;    73359 ms elapsed cpu time, including 4756 ms collecting
-;;;    73404 ms elapsed real time, including 4740 ms collecting
-;;;    21382279120 bytes allocated, including 21277591440 bytes reclaimed
-;;;
-;;; without the optimization--almost 5 times slower, and allocates more than
-;;; 4 times as much memory.         
-;;;
-;;; (time (load "cesk-quines-no-fail-fast.scm"))
-;;;    10507 collections
-;;;    352053 ms elapsed cpu time, including 62634 ms collecting
-;;;    352250 ms elapsed real time, including 62614 ms collecting
-;;;    88514683712 bytes allocated, including 87976358640 bytes reclaimed
-;;;
-;;; To be meaningful, these benchmarks should be run under full Chez with optimizations and libraries.
-;;; Still, the optimization clearly prunes the search tree in a beneficial way.
-
-;;; On casper:
-;;;         
-;;; using petite on casper:
-;;; (time (load "cesk-quines.scm"))
-;;;   2723 collections
-;;;   66097 ms elapsed cpu time, including 4484 ms collecting
-;;;   66154 ms elapsed real time, including 4552 ms collecting
-;;;   22941502176 bytes allocated, including 22849338064 bytes reclaimed
-;;;         
-;;; this code (with fail-fast optimization) under full Chez, with no optimization level specified:
-;;; (time (load "cesk-quines.scm"))
-;;;    180 collections
-;;;    19078 ms elapsed cpu time, including 1547 ms collecting
-;;;    19094 ms elapsed real time, including 1547 ms collecting
-;;;    1518008288 bytes allocated, including 1412899056 bytes reclaimed
-;;;
-;;; full chez on casper, optimize level 2
-;;; (time (load "cesk-quines.scm"))
-;;;    180 collections
-;;;    18991 ms elapsed cpu time, including 1538 ms collecting
-;;;    19007 ms elapsed real time, including 1543 ms collecting
-;;;    1518006048 bytes allocated, including 1412883360 bytes reclaimed
-;;;
-;;; full chez on casper, optimize level 3
-;;; (time (load "cesk-quines.scm"))
-;;;    174 collections
-;;;    16894 ms elapsed cpu time, including 1517 ms collecting
-;;;    16910 ms elapsed real time, including 1512 ms collecting
-;;;    1467972880 bytes allocated, including 1357525632 bytes reclaimed
-;;;
-;;; full chez on casper, optimize level 3, **including the thrine test**
-;;;
-;;;(time (load "cesk-quines.scm"))
-;;;    555 collections
-;;;    80863 ms elapsed cpu time, including 6024 ms collecting
-;;;    80911 ms elapsed real time, including 6041 ms collecting
-;;;    4674773648 bytes allocated, including 4477361232 bytes reclaimed
-         
+;;; testing trickier.         
          (fresh (x body env^)
            (make-proco x body env^ p))
 
