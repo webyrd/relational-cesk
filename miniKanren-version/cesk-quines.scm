@@ -34,7 +34,7 @@
       (numbero addr)
       (symbolo x)
       (not-in-storeo addr s^) ; not-in-storeo also calls numbero on addr--is this redundancy desireable?
-      (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out
+      (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
       )))
 
 (define apply-ko
