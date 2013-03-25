@@ -32,6 +32,7 @@
       (ext-envo x addr env env^)
       (ext-storeo addr a s^ s^^)
       (numbero addr)
+      (symbolo x)
       (not-in-storeo addr s^) ; not-in-storeo also calls numbero on addr--is this redundancy desireable?
       (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out
       )))
