@@ -141,10 +141,10 @@
 ;        (== '() v-out*) ; v-out*
          (== (answer '() s) ans)
          (apply-ko k ans out))]
-      [(fresh (e ignore v-out v-out-rest)
+      [(fresh (e ignore v-out v-out^ v-out-rest v-ignore v-ignore^)
          (== `(,e . ,ignore) e*)
-         (== `(,v-out . ,v-out-rest) v-out*) ; v-out*
-         (eval-exp-auxo e env s (list-aux-outer-k e* env k v-out-rest) out v-out))])))
+         (== `(,v-ignore . ,v-out-rest) v-out*) ; v-out*    v-out-rest is the important part
+         (eval-exp-auxo e env s (list-aux-outer-k e* env k v-out-rest) out v-ignore^))])))
 
 (define eval-expo
   (lambda (exp env s k out)
