@@ -103,16 +103,14 @@
     (conde
       [(fresh (datum ans)
          (== `(quote ,datum) exp)
-         (== datum v-out) ; v-out  this use isn't strictly needed--without it, quine generation takes 2.4 seconds rather than 800 ms
-;         ** This unification causes 'cesk-application-inner-k-2' to fail. **
-;          Is there a way prune the search tree for simple expressions, without overconstraining the answer?
+         (== datum v-out) ; v-out
          (== (answer datum s) ans)         
          (absento 'closure datum)
          (not-in-envo 'quote env)
          (apply-ko k ans out))]
       [(fresh (x body ans)
          (== `(lambda (,x) ,body) exp)
-         (== (make-proc x body env) v-out) ; v-out         
+         (== (make-proc x body env) v-out) ; v-out
          (== (answer (make-proc x body env) s) ans)
          (not-in-envo 'lambda env)
          (symbolo x) ; interesting: adding this symbolo constraint increased the runtime by ~7%
@@ -143,7 +141,7 @@
          (apply-ko k ans out))]
       [(fresh (e ignore v-out v-out^ v-out-rest v-ignore v-ignore^)
          (== `(,e . ,ignore) e*)
-         (== `(,v-ignore . ,v-out-rest) v-out*) ; v-out*    v-out-rest is the important part      this is unsound *sigh*
+         (== `(,v-ignore . ,v-out-rest) v-out*) ; v-out*    v-out-rest is the important part
          (eval-exp-auxo e env s (list-aux-outer-k e* env k v-out-rest) out v-ignore^))])))
 
 (define eval-expo
