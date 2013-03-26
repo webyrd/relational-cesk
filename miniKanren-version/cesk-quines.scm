@@ -138,7 +138,7 @@
     (conde
       [(fresh (ans)
          (== '() e*)
-;         (== '() v-out*) ; v-out*
+;        (== '() v-out*) ; v-out*
          (== (answer '() s) ans)
          (apply-ko k ans out))]
       [(fresh (e ignore ignore^ v-out v-out-rest)
