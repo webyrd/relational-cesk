@@ -1,7 +1,9 @@
-(library (cesk-quines-simple)
+(library (cesk-quines-simple-dummy-v-out)
   (export evalo eval-expo empty-env empty-store empty-k)
   (import (rnrs) (mk-lib) (lookupo-lib))
 
+;;; includes dummy (fresh) slot for v-out in appropriate continuations, to make it easier to compare answers between cesk-quines.scm and cesk-quines-simple.
+  
   (define answer
     (lambda (v s)
       (cons v s)))
@@ -44,23 +46,23 @@
            (== v/s out)
            (== (answer v s) v/s))
          ]
-        [(fresh (p k a s^^)
-           (== (application-inner-k p k) k^)
+        [(fresh (p k a s^^ dummy-v-out)
+           (== (application-inner-k p k dummy-v-out) k^)
            (== (answer a s^^) v/s)
            (apply-proco p a s^^ k out)
            )]
-        [(fresh (rand env k p s^)
-           (== (application-outer-k rand env k) k^)
+        [(fresh (rand env k p s^ dummy-v-out dummy-v-out^)
+           (== (application-outer-k rand env k dummy-v-out) k^)
            (== (answer p s^) v/s)
-           (eval-exp-auxo rand env s^ (application-inner-k p k) out)
+           (eval-exp-auxo rand env s^ (application-inner-k p k dummy-v-out^) out)
            )]
         [(fresh (v k v* s^^ ans)
            (== (list-aux-inner-k v k) k^)
            (== (answer v* s^^) v/s)
            (== (answer (cons v v*) s^^) ans)
            (apply-ko k ans out))]
-        [(fresh (e* env k v s^ e*-rest ignore)
-           (== (list-aux-outer-k e* env k) k^)
+        [(fresh (e* env k v s^ e*-rest ignore dummy-v-out)
+           (== (list-aux-outer-k e* env k dummy-v-out) k^)
            (== (answer v s^) v/s)
            (== `(,ignore . ,e*-rest) e*)
            (list-auxo e*-rest env s^ (list-aux-inner-k v k) out)
@@ -69,20 +71,20 @@
   (define empty-k '(empty-k))
 
   (define application-inner-k
-    (lambda (p k)
-      `(application-inner-k ,p ,k)))
+    (lambda (p k v-out^)
+      `(application-inner-k ,p ,k ,v-out^)))
 
   (define application-outer-k
-    (lambda (rand env k)
-      `(application-outer-k ,rand ,env ,k)))
+    (lambda (rand env k v-out^)
+      `(application-outer-k ,rand ,env ,k ,v-out^)))
 
   (define list-aux-inner-k
     (lambda (v k)
       `(list-aux-inner-k ,v ,k)))
 
   (define list-aux-outer-k
-    (lambda (e* env k)
-      `(list-aux-outer-k ,e* ,env ,k)))
+    (lambda (e* env k v-out^)
+      `(list-aux-outer-k ,e* ,env ,k ,v-out^)))
 
   (define eval-exp-auxo
     (lambda (exp env s k out)
@@ -104,9 +106,9 @@
            (== (answer v s) ans)
            (lookupo exp env s v)
            (apply-ko k ans out))]
-        [(fresh (rator rand)
+        [(fresh (rator rand dummy-v-out)
            (== `(,rator ,rand) exp)
-           (eval-exp-auxo rator env s (application-outer-k rand env k) out)
+           (eval-exp-auxo rator env s (application-outer-k rand env k dummy-v-out) out)
            )]
         [(fresh (e*)
            (== `(list . ,e*) exp)
@@ -121,9 +123,9 @@
            (== '() e*)
            (== (answer '() s) ans)
            (apply-ko k ans out))]
-        [(fresh (e ignore)
+        [(fresh (e ignore dummy-v-out)
            (== `(,e . ,ignore) e*)
-           (eval-exp-auxo e env s (list-aux-outer-k e* env k) out))])))
+           (eval-exp-auxo e env s (list-aux-outer-k e* env k dummy-v-out) out))])))
 
   (define eval-expo
     (lambda (exp env s k out)

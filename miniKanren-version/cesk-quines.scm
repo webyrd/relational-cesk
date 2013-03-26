@@ -141,7 +141,7 @@
 ;        (== '() v-out*) ; v-out*
          (== (answer '() s) ans)
          (apply-ko k ans out))]
-      [(fresh (e ignore ignore^ v-out v-out-rest)
+      [(fresh (e ignore v-out v-out-rest)
          (== `(,e . ,ignore) e*)
          (== `(,v-out . ,v-out-rest) v-out*) ; v-out*
          (eval-exp-auxo e env s (list-aux-outer-k e* env k v-out-rest) out v-out))])))
