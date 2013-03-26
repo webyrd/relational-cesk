@@ -139,7 +139,7 @@
          (== `(set! ,x ,e) exp)
          (not-in-envo 'set! env)
          (symbolo x)
-         ; (== 'void v-out) ; v-out
+         (== 'void v-out) ; v-out
          (eval-exp-auxo e env s (set!-k x env k) out v-out-ignore))]
       [(fresh (rator rand v-out-ignore)
          (== `(,rator ,rand) exp)
