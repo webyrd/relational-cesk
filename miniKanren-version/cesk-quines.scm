@@ -1300,23 +1300,18 @@
       '(lambda (_.0) (list _.0 (list 'quote _.0))))
      (=/= ((_.0 closure)) ((_.0 list)) ((_.0 quote)))
      (sym _.0))
-    (((lambda (_.0)
-        (list _.0 (list ((lambda (_.1) 'quote) '_.2) _.0)))
-      '(lambda (_.0)
-         (list _.0 (list ((lambda (_.1) 'quote) '_.2) _.0))))
-     (=/= ((_.0 closure)) ((_.0 lambda)) ((_.0 list))
-          ((_.0 quote)) ((_.1 closure)) ((_.1 quote)))
+    (((lambda (_.0) (list _.0 (list 'quote ((lambda (_.1) _.0) '_.2))))
+      '(lambda (_.0) (list _.0 (list 'quote ((lambda (_.1) _.0) '_.2)))))
+     (=/= ((_.0 _.1)) ((_.0 closure)) ((_.0 lambda)) ((_.0 list)) ((_.0 quote)) ((_.1 closure)))
      (sym _.0 _.1)
      (absento (closure _.2)))
     (((lambda (_.0)
         (list _.0 ((lambda (_.1) (list 'quote _.0)) '_.2)))
       '(lambda (_.0)
          (list _.0 ((lambda (_.1) (list 'quote _.0)) '_.2))))
-     (=/= ((_.0 _.1)) ((_.0 closure)) ((_.0 lambda)) ((_.0 list))
-          ((_.0 quote)) ((_.1 closure)) ((_.1 list)) ((_.1 quote)))
+     (=/= ((_.0 _.1)) ((_.0 closure)) ((_.0 lambda)) ((_.0 list)) ((_.0 quote)) ((_.1 closure)) ((_.1 list)) ((_.1 quote)))
      (sym _.0 _.1)
      (absento (closure _.2)))))
-
 
 #!eof
 
