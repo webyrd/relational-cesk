@@ -138,7 +138,7 @@
     (conde
       [(fresh (ans)
          (== '() e*)
-         (== '() v-out*) ; v-out*
+;         (== '() v-out*) ; v-out*
          (== (answer '() s) ans)
          (apply-ko k ans out))]
       [(fresh (e ignore ignore^ v-out v-out-rest)
@@ -217,11 +217,11 @@
   (run 3 (q)
     (evalo q '(foo bar)))
   '('(foo bar)
-    (list 'foo 'bar)
     (((lambda (_.0) '(foo bar)) '_.1)
      (=/= ((_.0 quote)))
      (sym _.0)
-     (absento (closure _.1)))))
+     (absento (closure _.1)))
+    (list 'foo 'bar)))
 
 (test "cesk-list-3"
   (run* (q)
@@ -342,6 +342,268 @@
      (sym _.10 _.11 _.9)
      (absento (_.14 _.5) (closure _.0) (quote _.1)))))
 
+(test "cesk-empty-list-backwards"
+  (run 8 (q)
+    (fresh (expr k datum x y env^ env store val v-out)
+      (== '(list) expr)
+      (=/= empty-k k)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '((((list)
+      (_.0 _.1)
+      _.2
+      (list-aux-inner-k _.3 (empty-k))
+      (_.3))
+     (absento (list _.0)))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 '_.5 (_.6 _.7))
+       (empty-k)
+       _.8)
+      _.5)
+     (=/= ((_.4 quote)))
+     (sym _.4)
+     (absento (closure _.5) (list _.0) '_.6))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 (lambda (_.5) _.6) (_.7 _.8))
+       (empty-k)
+       _.9)
+      (closure _.5 _.6 ((_.4 . _.7) (_.10 . _.8))))
+     (=/= ((_.4 lambda)))
+     (num _.10)
+     (sym _.4 _.5)
+     (absento (_.10 _.2) (lambda _.7) (list _.0)))
+    (((list)
+      (_.0 _.1)
+      _.2
+      (list-aux-outer-k (_.3) _.4 (empty-k) _.5)
+      (()))
+     (absento (list _.0)))
+    (((list)
+      (_.0 _.1)
+      _.2
+      (list-aux-inner-k _.3 (list-aux-inner-k _.4 (empty-k)))
+      (_.4 _.3))
+     (absento (list _.0)))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 '_.5 (_.6 _.7))
+       (list-aux-inner-k _.8 (empty-k))
+       _.9)
+      (_.8 . _.5))
+     (=/= ((_.4 quote)))
+     (sym _.4)
+     (absento (closure _.5) (list _.0) '_.6))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (list-aux-inner-k
+       _.4
+       (application-inner-k
+        (closure _.5 '_.6 (_.7 _.8))
+        (empty-k)
+        _.9))
+      _.6)
+     (=/= ((_.5 quote)))
+     (sym _.5)
+     (absento (closure _.6) (list _.0) '_.7))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 '_.5 (_.6 _.7))
+       (application-inner-k
+        (closure _.8 '_.9 (_.10 _.11))
+        (empty-k)
+        _.12)
+       _.13)
+      _.9)
+     (=/= ((_.4 quote)) ((_.8 quote)))
+     (sym _.4 _.8)
+     (absento (closure _.5) (closure _.9) (list _.0) '_.10
+              '_.6))))
+
+(test "cesk-nested-lists"
+  (run 4 (q)
+    (fresh (expr k datum x y env^ env store val v-out a d)
+      (== '(list (list)) expr)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '((((list (list))
+      (_.0 _.1)
+      _.2
+      (empty-k)
+      (()))
+     (absento (list _.0)))
+    (((list (list))
+      (_.0 _.1)
+      _.2
+      (list-aux-inner-k _.3 (empty-k))
+      (_.3 ()))
+     (absento (list _.0)))
+    (((list (list))
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 '(_.5 . _.6) (_.7 _.8))
+       (empty-k)
+       _.9)
+      (_.5 . _.6))
+     (=/= ((_.4 quote)))
+     (sym _.4)
+     (absento (closure _.5) (closure _.6) (list _.0) '_.7))
+    (((list (list))
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 (lambda (_.5) _.6) (_.7 _.8))
+       (empty-k)
+       _.9)
+      (closure _.5 _.6 ((_.4 . _.7) (_.10 . _.8))))
+     (=/= ((_.4 lambda)))
+     (num _.10)
+     (sym _.4 _.5)
+     (absento (_.10 _.2) (lambda _.7) (list _.0)))))
+
+(test "cesk-empty-list-application"
+  (run 4 (q)
+    (fresh (expr k datum x y env^ env store val v-out a d)
+      (== '((lambda (x) (quote (foo bar))) (list)) expr)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '(((((lambda (x) '(foo bar)) (list))
+      (_.0 _.1)
+      (_.2 _.3)
+      (empty-k)
+      (foo bar))
+     (absento (lambda _.0) (list _.0) '_.0))
+    ((((lambda (x) '(foo bar)) (list))
+      (_.0 _.1)
+      (_.2 _.3)
+      (list-aux-inner-k _.4 (empty-k))
+      (_.4 foo bar))
+     (absento (lambda _.0) (list _.0) '_.0))
+    ((((lambda (x) '(foo bar)) (list))
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 '_.5 (_.6 _.7))
+       (empty-k)
+       _.8)
+      _.5)
+     (=/= ((_.4 quote)))
+     (sym _.4)
+     (absento (closure _.5) (lambda _.0) (list _.0) '_.0 '_.6))
+    ((((lambda (x) '(foo bar)) (list))
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 (lambda (_.5) _.6) (_.7 _.8))
+       (empty-k)
+       _.9)
+      (closure _.5 _.6 ((_.4 . _.7) (_.10 . _.8))))
+     (=/= ((_.4 lambda)))
+     (num _.10)
+     (sym _.4 _.5)
+     (absento (_.10 _.2) (lambda _.0) (lambda _.7) (list _.0)
+              '_.0))))
+
+(test "cesk-empty-list-non-empty-answer-backwards-1"
+  (run 1 (q)
+    (fresh (expr k datum x y env^ env store val v-out)
+      (== '(list) expr)
+      (==
+       `(application-inner-k
+         (closure ,x (quote foo) ,env^)
+         (empty-k)
+         ,v-out)
+       k)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '((((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k (closure _.4 'foo (_.5 _.6)) (empty-k) _.7)
+      foo)
+     (=/= ((_.4 quote)))
+     (sym _.4)
+     (absento (list _.0) '_.5))))
+
+(test "cesk-empty-list-non-empty-answer-backwards-2"
+  (run 4 (q)
+    (fresh (expr k datum x y env^ env store val v-out a d)
+      (== '(list) expr)
+      (=/= '() val)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '((((list)
+      (_.0 _.1)
+      _.2
+      (list-aux-inner-k _.3 (empty-k))
+      (_.3))
+     (absento (list _.0)))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 '_.5 (_.6 _.7))
+       (empty-k)
+       _.8)
+      _.5)
+     (=/= ((_.4 quote)) ((_.5 ())))
+     (sym _.4)
+     (absento (closure _.5) (list _.0) '_.6))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 (lambda (_.5) _.6) (_.7 _.8))
+       (empty-k)
+       _.9)
+      (closure _.5 _.6 ((_.4 . _.7) (_.10 . _.8))))
+     (=/= ((_.4 lambda)))
+     (num _.10)
+     (sym _.4 _.5)
+     (absento (_.10 _.2) (lambda _.7) (list _.0)))
+    (((list)
+      (_.0 _.1)
+      _.2
+      (list-aux-outer-k (_.3) _.4 (empty-k) _.5)
+      (()))
+     (absento (list _.0)))))
+
 (define quinec
   '((lambda (x)
       (list x (list (quote quote) x)))
@@ -380,8 +642,6 @@
                    q)))
   `(x))
 
-
-
 (test "cesk-quinec-bkwards-a"
   (run 50 (q)
     (fresh (expr env store k val)
@@ -392,7 +652,8 @@
        k
        val)
       (== `(,expr ,env ,store ,k ,val) q)))
-  '((('_.0 (_.1 _.2) _.3 (empty-k) _.0)
+  '((('_.0
+      (_.1 _.2) _.3 (empty-k) _.0)
      (absento (closure _.0) '_.1))
     (((lambda (_.0) _.1)
       (_.2 _.3)
@@ -407,7 +668,6 @@
       (list-aux-inner-k _.4 (empty-k))
       (_.4 . _.0))
      (absento (closure _.0) '_.1))
-
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
@@ -419,15 +679,12 @@
      (=/= ((_.5 quote)))
      (sym _.5)
      (absento (closure _.0) (closure _.6) '_.1 '_.7))
-
-    ((_.0
-      ((_.0 . _.1) (_.2 . _.3))
-      ((_.2 . _.4) (_.5 . _.6))
-      (empty-k)
-      _.5)
+    ((_.0 ((_.0 . _.1) (_.2 . _.3))
+          ((_.2 . _.4) (_.5 . _.6))
+          (empty-k)
+          _.5)
      (num _.2)
      (sym _.0))
-    
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
@@ -440,7 +697,6 @@
      (num _.11)
      (sym _.5 _.6)
      (absento (_.11 _.3) (closure _.0) (lambda _.8) '_.1))
-    
     (((lambda (_.0) _.1)
       (_.2 _.3)
       _.4
@@ -448,7 +704,6 @@
       (_.5 closure _.0 _.1 (_.2 _.3)))
      (sym _.0)
      (absento (lambda _.2)))
-
     (((lambda (_.0) _.1)
       (_.2 _.3)
       (_.4 _.5)
@@ -460,11 +715,10 @@
      (=/= ((_.6 quote)))
      (sym _.0 _.6)
      (absento (closure _.7) (lambda _.2) '_.8))
-    
     (('_.0
       (_.1 _.2)
       _.3
-      (list-aux-outer-k (_.4) _.5 (empty-k) ())
+      (list-aux-outer-k (_.4) _.5 (empty-k) _.6)
       (_.0))
      (absento (closure _.0) '_.1))
     (((list) (_.0 _.1) _.2 (empty-k) ()) (absento (list _.0)))
@@ -567,7 +821,7 @@
        (_.4)
        _.5
        (list-aux-inner-k _.6 (empty-k))
-       ())
+       _.7)
       (_.6 _.0))
      (absento (closure _.0) '_.1))
     (('_.0
@@ -647,7 +901,7 @@
     (((lambda (_.0) _.1)
       (_.2 _.3)
       _.4
-      (list-aux-outer-k (_.5) _.6 (empty-k) ())
+      (list-aux-outer-k (_.5) _.6 (empty-k) _.7)
       ((closure _.0 _.1 (_.2 _.3))))
      (sym _.0)
      (absento (lambda _.2)))
@@ -683,7 +937,7 @@
         (closure _.7 '_.8 (_.9 _.10))
         (empty-k)
         _.11)
-       ())
+       _.12)
       _.8)
      (=/= ((_.7 quote)))
      (sym _.7)
@@ -700,8 +954,8 @@
       (_.3 _.4)
       (application-inner-k
        (closure _.5 '_.6 (_.7 _.8))
-       (list-aux-outer-k (_.9) _.10 (empty-k) ())
-       _.11)
+       (list-aux-outer-k (_.9) _.10 (empty-k) _.11)
+       _.12)
       (_.6))
      (=/= ((_.5 quote)))
      (sym _.5)
@@ -712,11 +966,17 @@
       (application-inner-k
        (closure _.5 (list) (_.6 _.7))
        (empty-k)
-       ())
+       _.8)
       ())
      (=/= ((_.5 list)))
      (sym _.5)
      (absento (closure _.0) (list _.6) '_.1))
+    (((list)
+      (_.0 _.1)
+      _.2
+      (list-aux-inner-k _.3 (empty-k))
+      (_.3))
+     (absento (list _.0)))
     (((lambda (_.0) '_.1)
       (_.2 _.3)
       (_.4 _.5)
@@ -726,7 +986,6 @@
      (sym _.0)
      (absento (closure _.1) (closure _.6) (lambda _.2) '_.2
               '_.7))
-
     (('_.0
       (_.1 _.2)
       ((_.3 . _.4) (_.5 . _.6))
@@ -739,7 +998,6 @@
      (num _.10 _.3)
      (sym _.7 _.8)
      (absento (_.10 _.4) (closure _.0) '_.1))
-    
     (((lambda (_.0) _.1)
       (_.2 _.3)
       (_.4 _.5)
@@ -831,12 +1089,12 @@
         (closure _.7 (lambda (_.8) _.9) (_.10 _.11))
         (empty-k)
         _.12)
-       ())
-      (closure _.8 _.9 ((_.7 . _.10) (_.13 . _.11))))
+       _.13)
+      (closure _.8 _.9 ((_.7 . _.10) (_.14 . _.11))))
      (=/= ((_.7 lambda)))
-     (num _.13)
+     (num _.14)
      (sym _.7 _.8)
-     (absento (_.13 _.3) (closure _.0) (lambda _.10) '_.1))
+     (absento (_.14 _.3) (closure _.0) (lambda _.10) '_.1))
     (((lambda (_.0) (lambda (_.1) _.2))
       (_.3 _.4)
       (_.5 _.6)
@@ -893,30 +1151,23 @@
       (_.0 _.1)
       (_.2 _.3)
       (application-inner-k
-       (closure _.4 '() (_.5 _.6))
+       (closure _.4 '_.5 (_.6 _.7))
        (empty-k)
-       _.7)
-      ())
+       _.8)
+      _.5)
      (=/= ((_.4 quote)))
      (sym _.4)
-     (absento (list _.0) '_.5))
+     (absento (closure _.5) (list _.0) '_.6))
     (('_.0
       (_.1 _.2)
       _.3
-      (list-aux-outer-k (_.4 '_.5) (_.6 _.7) (empty-k) (_.8))
+      (list-aux-outer-k
+       (_.4 '_.5)
+       (_.6 _.7)
+       (empty-k)
+       (_.8 . _.9))
       (_.0 _.5))
-     (absento (closure _.0) (closure _.5) '_.1 '_.6))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
-          (application-inner-k
-           (closure _.9 '_.10 (_.11 _.12))
-           (empty-k)
-           _.13)
-          _.10)
-     (=/= ((_.2 _.4)) ((_.9 quote)))
-     (num _.2 _.4)
-     (sym _.0 _.9)
-     (absento (closure _.10) '_.11))))
+     (absento (closure _.0) (closure _.5) '_.1 '_.6))))
 
 (test "cesk-quinec-bkwards-a"
   (run 1 (q)
@@ -929,9 +1180,6 @@
     (evalo q quinec))
   '('((lambda (x) (list x (list 'quote x)))
       '(lambda (x) (list x (list 'quote x))))
-    (list
-     '(lambda (x) (list x (list 'quote x)))
-     ''(lambda (x) (list x (list 'quote x))))
     (((lambda (_.0)
         '((lambda (x) (list x (list 'quote x)))
           '(lambda (x) (list x (list 'quote x)))))
@@ -939,6 +1187,9 @@
      (=/= ((_.0 quote)))
      (sym _.0)
      (absento (closure _.1)))
+    (list
+     '(lambda (x) (list x (list 'quote x)))
+     ''(lambda (x) (list x (list 'quote x))))
     (((lambda (_.0) _.0)
       '((lambda (x) (list x (list 'quote x)))
         '(lambda (x) (list x (list 'quote x)))))
@@ -955,17 +1206,6 @@
       (list))
      (=/= ((_.0 quote)))
      (sym _.0))
-    (list
-     '(lambda (x) (list x (list 'quote x)))
-     (list 'quote '(lambda (x) (list x (list 'quote x)))))
-    (((lambda (_.0)
-        (list
-         '(lambda (x) (list x (list 'quote x)))
-         ''(lambda (x) (list x (list 'quote x)))))
-      '_.1)
-     (=/= ((_.0 list)) ((_.0 quote)))
-     (sym _.0)
-     (absento (closure _.1)))
     (((lambda (_.0)
         ((lambda (_.1)
            '((lambda (x) (list x (list 'quote x)))
@@ -980,6 +1220,17 @@
       ((lambda (_.0) ''(lambda (x) (list x (list 'quote x))))
        '_.1))
      (=/= ((_.0 quote)))
+     (sym _.0)
+     (absento (closure _.1)))
+    (list
+     '(lambda (x) (list x (list 'quote x)))
+     (list 'quote '(lambda (x) (list x (list 'quote x)))))
+    (((lambda (_.0)
+        (list
+         '(lambda (x) (list x (list 'quote x)))
+         ''(lambda (x) (list x (list 'quote x)))))
+      '_.1)
+     (=/= ((_.0 list)) ((_.0 quote)))
      (sym _.0)
      (absento (closure _.1)))))
 
