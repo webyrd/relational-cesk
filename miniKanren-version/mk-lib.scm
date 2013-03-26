@@ -1,7 +1,7 @@
 ;;; newer version: 19 March 2013
 
 (library (mk-lib)
-  (export == =/= symbolo numbero absento fresh conde run run* conda condu)
+  (export == =/= symbolo numbero absento fresh conde run run* project conda condu)
   (import (rnrs) (only (chezscheme) sort sub1))
 
 (define empty-c '(() () () () ())) ;; moved 
