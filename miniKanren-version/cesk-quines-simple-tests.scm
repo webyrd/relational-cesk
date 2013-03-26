@@ -1,17 +1,5 @@
 #!/usr/bin/env scheme-script
-(import (rnrs) (mk-lib) (lookupo-lib) (cesk-quines-simple))
-
-(define-syntax test
-  (syntax-rules ()
-    ((_ title tested-expression expected-result)
-     (begin
-       (printf "Testing ~s\n" title)
-       (let* ((expected expected-result)
-              (produced tested-expression))
-         (or (equal? expected produced)
-             (errorf 'test
-               "Failed: ~a~%Expected: ~a~%Computed: ~a~%"
-               'tested-expression expected produced)))))))
+(import (rnrs) (mk-lib) (lookupo-lib) (test-check-lib) (cesk-quines-simple))
 
 (test "cesk-simple-quote-a"
   (run* (q)
