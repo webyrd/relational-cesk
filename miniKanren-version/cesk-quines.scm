@@ -34,7 +34,7 @@
       (numbero addr)
       (symbolo x)
       (not-in-storeo addr s^) ; not-in-storeo also calls numbero on addr--is this redundancy desireable?
-      (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
+      (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
       )))
 
 (define apply-ko
@@ -48,7 +48,7 @@
       [(fresh (p k a s^^ v-out^)
          (== (application-inner-k p k v-out^) k^)
          (== (answer a s^^) v/s)
-         (apply-proco p a s^^ k out v-out^) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
+         (apply-proco p a s^^ k out v-out^) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
          )]
       [(fresh (rand env k p s^ v-out^ v-out-ignore)
          (== (application-outer-k rand env k v-out^) k^)
@@ -64,7 +64,7 @@
          (fresh (x body env^)
            (== (make-proc x body env^) p))
 
-         (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
+         (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
          )]
       [(fresh (v k v* s^^ ans)
          (== (list-aux-inner-k v k) k^)
@@ -75,7 +75,7 @@
          (== (list-aux-outer-k e* env k v-out-rest) k^)
          (== (answer v s^) v/s)
          (== `(,ignore . ,e*-rest) e*)
-         (list-auxo e*-rest env s^ (list-aux-inner-k v k) out v-out-rest) ; v-out (this use is essential--passing a fresh variable results in the ability to generate quines in a reasonable time)
+         (list-auxo e*-rest env s^ (list-aux-inner-k v k) out v-out-rest) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
          )])))
 
 (define empty-k '(empty-k))
