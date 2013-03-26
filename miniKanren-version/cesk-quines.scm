@@ -103,20 +103,22 @@
     (conde
       [(fresh (datum ans)
          (== `(quote ,datum) exp)
-         (== datum v-out) ; v-out
+;         (== datum v-out) ; v-out  this use isn't strictly needed--without it, quine generation takes 2.4 seconds rather than 800 ms
+;         ** This unification causes 'cesk-application-inner-k-2' to fail. **
+;          Is there a way prune the search tree for simple expressions, without overconstraining the answer?
          (== (answer datum s) ans)
          (absento 'closure datum)
          (not-in-envo 'quote env)
          (apply-ko k ans out))]
       [(fresh (x body ans)
          (== `(lambda (,x) ,body) exp)
-         (== (make-proc x body env) v-out) ; v-out
+;         (== (make-proc x body env) v-out) ; v-out
          (== (answer (make-proc x body env) s) ans)
          (not-in-envo 'lambda env)
          (symbolo x) ; interesting: adding this symbolo constraint increased the runtime by ~7%
          (apply-ko k ans out))]
       [(fresh (v ans)
-         (== v v-out) ; v-out
+;         (== v v-out) ; v-out
          (symbolo exp)
          (== (answer v s) ans)
          (lookupo exp env s v)
@@ -239,6 +241,107 @@
            q))
   '((bar bar bar)))
 
+(test "cesk-nested-lambda"
+  (run* (q)
+    (evalo '(((lambda (y)
+                (lambda (x) y))
+              (quote foo))
+             (quote bar))
+           q))
+  '(foo))
+
+;;; tests related to v-out
+(test "cesk-application-inner-k-1"
+  (run 1 (q)
+    (fresh (expr env store k val v-out datum env^ x datum^)
+      (== `(quote ,datum) expr)
+      (==
+       `(application-inner-k
+         (closure ,x (quote ,datum^) ,env^)
+         (empty-k)
+         ,v-out)
+       k)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '((((quote _.0)
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k (closure _.5 (quote _.6) (_.7 _.8)) (empty-k) _.9)
+      _.6)
+     (=/= ((_.5 quote)))
+     (sym _.5)
+     (absento (closure _.0) (closure _.6) (quote _.1) (quote _.7)))))
+
+(test "cesk-application-inner-k-2"
+  (run 4 (q)
+    (fresh (expr k datum x y env^ env store val v-out)
+      (== `(quote ,datum) expr)
+      (symbolo y)
+      (==
+       `(application-inner-k
+         (closure ,x ,y ,env^)
+         (empty-k)
+         ,v-out)
+       k)
+      (eval-expo
+       expr
+       env
+       store
+       k
+       val)
+      (== `(,expr ,env ,store ,k ,val) q)))
+  '((((quote _.0)
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 _.5 (_.6 _.7))
+       (empty-k)
+       _.8)
+      _.0)
+     (sym _.5)
+     (absento (closure _.0) (quote _.1)))
+    (((quote _.0)
+      (_.1 _.2)
+      ((_.3 . _.4) (_.5 . _.6))
+      (application-inner-k
+       (closure _.7 _.8 ((_.8 . _.9) (_.10 . _.11)))
+       (empty-k)
+       _.12)
+      _.0)
+     (=/= ((_.10 _.3)) ((_.7 _.8)))
+     (num _.10 _.3)
+     (sym _.7 _.8)
+     (absento (_.10 _.4) (closure _.0) (quote _.1)))
+    (((quote _.0)
+      (_.1 _.2)
+      ((_.3 . _.4) (_.5 . _.6))
+      (application-inner-k
+       (closure _.7 _.8 ((_.8 . _.9) (_.3 . _.10)))
+       (empty-k)
+       _.11)
+      _.5)
+     (=/= ((_.7 _.8)))
+     (num _.3)
+     (sym _.7 _.8)
+     (absento (closure _.0) (quote _.1)))
+    (((quote _.0)
+      (_.1 _.2)
+      ((_.3 _.4 . _.5) (_.6 _.7 . _.8))
+      (application-inner-k
+       (closure _.9 _.10 ((_.11 _.10 . _.12) (_.13 _.14 . _.15)))
+       (empty-k)
+       _.16)
+      _.0)
+     (=/= ((_.10 _.11)) ((_.10 _.9)) ((_.14 _.3)) ((_.14 _.4)))
+     (num _.13 _.14 _.3 _.4)
+     (sym _.10 _.11 _.9)
+     (absento (_.14 _.5) (closure _.0) (quote _.1)))))
+
 (define quinec
   '((lambda (x)
       (list x (list (quote quote) x)))
@@ -300,21 +403,70 @@
      (absento (lambda _.2)))
     (('_.0
       (_.1 _.2)
+      _.3
+      (list-aux-inner-k _.4 (empty-k))
+      (_.4 . _.0))
+     (absento (closure _.0) '_.1))
+
+    (('_.0
+      (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
-       (closure _.5 '_.0 (_.6 _.7))
+       (closure _.5 '_.6 (_.7 _.8))
        (empty-k)
-       _.0)
-      _.0)
+       _.9)
+      _.6)
      (=/= ((_.5 quote)))
      (sym _.5)
-     (absento (closure _.0) '_.1 '_.6))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.2 . _.4) (_.5 . _.6))
-          (empty-k)
-          _.5)
+     (absento (closure _.0) (closure _.6) '_.1 '_.7))
+
+    ((_.0
+      ((_.0 . _.1) (_.2 . _.3))
+      ((_.2 . _.4) (_.5 . _.6))
+      (empty-k)
+      _.5)
      (num _.2)
      (sym _.0))
+    
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 (lambda (_.6) _.7) (_.8 _.9))
+       (empty-k)
+       _.10)
+      (closure _.6 _.7 ((_.5 . _.8) (_.11 . _.9))))
+     (=/= ((_.5 lambda)))
+     (num _.11)
+     (sym _.5 _.6)
+     (absento (_.11 _.3) (closure _.0) (lambda _.8) '_.1))
+    
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      _.4
+      (list-aux-inner-k _.5 (empty-k))
+      (_.5 closure _.0 _.1 (_.2 _.3)))
+     (sym _.0)
+     (absento (lambda _.2)))
+
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      (_.4 _.5)
+      (application-inner-k
+       (closure _.6 '_.7 (_.8 _.9))
+       (empty-k)
+       _.10)
+      _.7)
+     (=/= ((_.6 quote)))
+     (sym _.0 _.6)
+     (absento (closure _.7) (lambda _.2) '_.8))
+    
+    (('_.0
+      (_.1 _.2)
+      _.3
+      (list-aux-outer-k (_.4) _.5 (empty-k) ())
+      (_.0))
+     (absento (closure _.0) '_.1))
     (((list) (_.0 _.1) _.2 (empty-k) ()) (absento (list _.0)))
     ((_.0 ((_.0 . _.1) (_.2 . _.3))
           ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
@@ -323,281 +475,35 @@
      (=/= ((_.2 _.4)))
      (num _.2 _.4)
      (sym _.0))
-    (('(_.0 . _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (application-inner-k
-       (closure _.6 '_.1 (_.7 _.8))
-       (list-aux-inner-k _.0 (empty-k))
-       _.1)
-      (_.0 . _.1))
-     (=/= ((_.6 quote)))
-     (sym _.6)
-     (absento (closure _.0) (closure _.1) '_.2 '_.7))
-    (((lambda (_.0) _.1)
-      ((_.2 . _.3) (_.4 . _.5))
-      (_.6 _.7)
-      (application-inner-k
-       (closure _.2 (lambda (_.0) _.1) (_.3 _.5))
-       (empty-k)
-       (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5))))
-      (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5))))
-     (=/= ((_.2 lambda)))
-     (num _.4)
-     (sym _.0 _.2)
-     (absento (_.4 _.6) (lambda _.3)))
-    (('_.0
-      (_.1 _.2)
-      (_.3 _.4)
-      (list-aux-inner-k
-       _.5
-       (application-inner-k
-        (closure _.6 '_.0 (_.7 _.8))
-        (empty-k)
-        _.0))
-      _.0)
-     (=/= ((_.6 quote)))
-     (sym _.6)
-     (absento (closure _.0) '_.1 '_.7))
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
        (closure _.5 '_.6 (_.7 _.8))
-       (application-inner-k
-        (closure _.9 '_.0 (_.10 _.11))
-        (empty-k)
-        _.0)
-       _.6)
-      _.0)
-     (=/= ((_.5 quote)) ((_.9 quote)))
-     (sym _.5 _.9)
-     (absento (closure _.0) (closure _.6) '_.1 '_.10 '_.7))
-    ((_.0 ((_.1 _.0 . _.2) (_.3 _.4 . _.5))
-          ((_.4 _.6 . _.7) (_.8 _.9 . _.10))
-          (empty-k)
-          _.8)
-     (=/= ((_.0 _.1)))
-     (num _.3 _.4 _.6)
-     (sym _.0 _.1))
-    (((lambda (_.0) _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (application-inner-k
-       (closure _.6 '(_.0 _.1 (_.2 _.3)) (_.7 _.8))
-       (list-aux-inner-k closure (empty-k))
-       (_.0 _.1 (_.2 _.3)))
-      (closure _.0 _.1 (_.2 _.3)))
-     (=/= ((_.0 closure)) ((_.6 quote)))
-     (sym _.0 _.6)
-     (absento (closure _.1) (closure _.2) (closure _.3)
-              (lambda _.2) '_.7))
-    (('_.0
-      (_.1 _.2)
-      (_.3 _.4)
-      (application-inner-k
-       (closure _.5 _.5 (_.6 _.7))
-       (empty-k)
-       _.0)
-      _.0)
-     (sym _.5)
-     (absento (closure _.0) '_.1))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.2 . _.4) (_.5 . _.6))
-          (application-inner-k
-           (closure _.7 '_.5 (_.8 _.9))
-           (empty-k)
-           _.5)
-          _.5)
-     (=/= ((_.7 quote)))
-     (num _.2)
-     (sym _.0 _.7)
-     (absento (closure _.5) '_.8))
-    (('_.0
-      (_.1 _.2)
-      (_.3 _.4)
-      (application-inner-k
-       (closure _.5 (lambda (_.6) _.7) (_.8 _.9))
-       (application-inner-k
-        (closure _.10 '_.0 (_.11 _.12))
-        (empty-k)
-        _.0)
-       (closure _.6 _.7 ((_.5 . _.8) (_.13 . _.9))))
-      _.0)
-     (=/= ((_.10 quote)) ((_.5 lambda)))
-     (num _.13)
-     (sym _.10 _.5 _.6)
-     (absento (_.13 _.3) (closure _.0) (lambda _.8) '_.1 '_.11))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.4 _.5 _.2 . _.6) (_.7 _.8 _.9 . _.10))
-          (empty-k)
-          _.9)
-     (=/= ((_.2 _.4)) ((_.2 _.5)))
-     (num _.2 _.4 _.5)
-     (sym _.0))
-    (('_.0
-      (_.1 _.2)
-      (_.3 _.4)
-      (list-aux-outer-k
-       (_.5)
-       _.6
-       (application-inner-k
-        (closure _.7 '_.0 (_.8 _.9))
-        (empty-k)
-        _.0)
-       ())
-      _.0)
-     (=/= ((_.7 quote)))
-     (sym _.7)
-     (absento (closure _.0) '_.1 '_.8))
-    (('(_.0)
-      (_.1 _.2)
-      (_.3 _.4)
-      (application-inner-k
-       (closure _.5 '_.0 (_.6 _.7))
-       (list-aux-outer-k (_.8) _.9 (empty-k) ())
-       _.0)
-      (_.0))
+       (list-aux-inner-k _.9 (empty-k))
+       _.10)
+      (_.9 . _.6))
      (=/= ((_.5 quote)))
      (sym _.5)
-     (absento (closure _.0) '_.1 '_.6))
-    (('() (_.0 _.1)
-      (_.2 _.3)
-      (application-inner-k
-       (closure _.4 (list) (_.5 _.6))
-       (empty-k)
-       ())
-      ())
-     (=/= ((_.4 list)))
-     (sym _.4)
-     (absento (list _.5) '_.0))
-    (('_.0
-      (_.1 _.2)
-      ((_.3 . _.4) (_.5 . _.6))
-      (application-inner-k
-       (closure _.7 _.8 ((_.8 . _.9) (_.10 . _.11)))
-       (empty-k)
-       _.0)
-      _.0)
-     (=/= ((_.10 _.3)) ((_.7 _.8)))
-     (num _.10 _.3)
-     (sym _.7 _.8)
-     (absento (_.10 _.4) (closure _.0) '_.1))
+     (absento (closure _.0) (closure _.6) '_.1 '_.7))
     (((lambda (_.0) _.1)
       (_.2 _.3)
       (_.4 _.5)
       (application-inner-k
-       (closure _.6 _.6 (_.7 _.8))
+       (closure _.6 (lambda (_.7) _.8) (_.9 _.10))
        (empty-k)
-       (closure _.0 _.1 (_.2 _.3)))
-      (closure _.0 _.1 (_.2 _.3)))
-     (sym _.0 _.6)
-     (absento (lambda _.2)))
-    (('(_.0 . _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (list-aux-inner-k
-       _.6
-       (application-inner-k
-        (closure _.7 '_.1 (_.8 _.9))
-        (list-aux-inner-k _.0 (empty-k))
-        _.1))
-      (_.0 . _.1))
-     (=/= ((_.7 quote)))
-     (sym _.7)
-     (absento (closure _.0) (closure _.1) '_.2 '_.8))
-    (('(_.0 . _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (application-inner-k
-       (closure _.6 '_.7 (_.8 _.9))
-       (application-inner-k
-        (closure _.10 '_.1 (_.11 _.12))
-        (list-aux-inner-k _.0 (empty-k))
-        _.1)
-       _.7)
-      (_.0 . _.1))
-     (=/= ((_.10 quote)) ((_.6 quote)))
-     (sym _.10 _.6)
-     (absento (closure _.0) (closure _.1) (closure _.7) '_.11
-              '_.2 '_.8))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.2 . _.4)
-           ((closure _.5 _.6 ((_.7 . _.8) (_.9 . _.10))) . _.11))
-          (application-inner-k
-           (closure _.7 (lambda (_.5) _.6) (_.8 _.10))
-           (empty-k)
-           (closure _.5 _.6 ((_.7 . _.8) (_.9 . _.10))))
-          (closure _.5 _.6 ((_.7 . _.8) (_.9 . _.10))))
-     (=/= ((_.2 _.9)) ((_.7 lambda)))
-     (num _.2 _.9)
-     (sym _.0 _.5 _.7)
-     (absento (_.9 _.4) (lambda _.8)))
-    (((lambda (_.0) _.1)
-      ((_.2 . _.3) (_.4 . _.5))
-      (_.6 _.7)
-      (application-inner-k
-       (closure _.8 '_.9 (_.10 _.11))
-       (application-inner-k
-        (closure _.2 (lambda (_.0) _.1) (_.3 _.5))
-        (empty-k)
-        (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5))))
-       _.9)
-      (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5))))
-     (=/= ((_.2 lambda)) ((_.8 quote)))
-     (num _.4)
-     (sym _.0 _.2 _.8)
-     (absento (_.4 _.6) (closure _.9) (lambda _.3) '_.10))
-    (('(_.0 _.1 . _.2)
-      (_.3 _.4)
-      (_.5 _.6)
-      (application-inner-k
-       (closure _.7 '_.2 (_.8 _.9))
-       (list-aux-inner-k _.1 (list-aux-inner-k _.0 (empty-k)))
-       _.2)
-      (_.0 _.1 . _.2))
-     (=/= ((_.7 quote)))
-     (sym _.7)
-     (absento (closure _.0) (closure _.1) (closure _.2) '_.3
-              '_.8))
-    (((list)
-      (_.0 _.1)
-      (_.2 _.3)
-      (application-inner-k
-       (closure _.4 '() (_.5 _.6))
-       (empty-k)
-       ())
-      ())
-     (=/= ((_.4 quote)))
-     (sym _.4)
-     (absento (list _.0) '_.5))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
-          (application-inner-k
-           (closure _.9 '_.7 (_.10 _.11))
-           (empty-k)
-           _.7)
-          _.7)
-     (=/= ((_.2 _.4)) ((_.9 quote)))
-     (num _.2 _.4)
-     (sym _.0 _.9)
-     (absento (closure _.7) '_.10))
+       _.11)
+      (closure _.7 _.8 ((_.6 . _.9) (_.12 . _.10))))
+     (=/= ((_.6 lambda)))
+     (num _.12)
+     (sym _.0 _.6 _.7)
+     (absento (_.12 _.4) (lambda _.2) (lambda _.9)))
     (('_.0
       (_.1 _.2)
-      (_.3 _.4)
-      (application-inner-k
-       (closure _.5 '_.6 (_.7 _.8))
-       (list-aux-inner-k
-        _.9
-        (application-inner-k
-         (closure _.10 '_.0 (_.11 _.12))
-         (empty-k)
-         _.0))
-       _.6)
-      _.0)
-     (=/= ((_.10 quote)) ((_.5 quote)))
-     (sym _.10 _.5)
-     (absento (closure _.0) (closure _.6) '_.1 '_.11 '_.7))
+      _.3
+      (list-aux-inner-k _.4 (list-aux-inner-k _.5 (empty-k)))
+      (_.5 _.4 . _.0))
+     (absento (closure _.0) '_.1))
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
@@ -605,15 +511,12 @@
        _.5
        (application-inner-k
         (closure _.6 '_.7 (_.8 _.9))
-        (application-inner-k
-         (closure _.10 '_.0 (_.11 _.12))
-         (empty-k)
-         _.0)
-        _.7))
-      _.0)
-     (=/= ((_.10 quote)) ((_.6 quote)))
-     (sym _.10 _.6)
-     (absento (closure _.0) (closure _.7) '_.1 '_.11 '_.8))
+        (empty-k)
+        _.10))
+      _.7)
+     (=/= ((_.6 quote)))
+     (sym _.6)
+     (absento (closure _.0) (closure _.7) '_.1 '_.8))
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
@@ -621,240 +524,52 @@
        (closure _.5 '_.6 (_.7 _.8))
        (application-inner-k
         (closure _.9 '_.10 (_.11 _.12))
-        (application-inner-k
-         (closure _.13 '_.0 (_.14 _.15))
-         (empty-k)
-         _.0)
-        _.10)
-       _.6)
-      _.0)
-     (=/= ((_.13 quote)) ((_.5 quote)) ((_.9 quote)))
-     (sym _.13 _.5 _.9)
+        (empty-k)
+        _.13)
+       _.14)
+      _.10)
+     (=/= ((_.5 quote)) ((_.9 quote)))
+     (sym _.5 _.9)
      (absento (closure _.0) (closure _.10) (closure _.6) '_.1
-              '_.11 '_.14 '_.7))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.4 _.5 _.6 _.2 . _.7) (_.8 _.9 _.10 _.11 . _.12))
+              '_.11 '_.7))
+    ((_.0 ((_.1 _.0 . _.2) (_.3 _.4 . _.5))
+          ((_.4 _.6 . _.7) (_.8 _.9 . _.10))
           (empty-k)
-          _.11)
-     (=/= ((_.2 _.4)) ((_.2 _.5)) ((_.2 _.6)))
-     (num _.2 _.4 _.5 _.6)
-     (sym _.0))
-    (((lambda (_.0) _.1)
-      (_.2 _.3)
-      ((_.4 . _.5) (_.6 . _.7))
-      (application-inner-k
-       (closure _.8 _.9 ((_.9 . _.10) (_.11 . _.12)))
-       (empty-k)
-       (closure _.0 _.1 (_.2 _.3)))
-      (closure _.0 _.1 (_.2 _.3)))
-     (=/= ((_.11 _.4)) ((_.8 _.9)))
-     (num _.11 _.4)
-     (sym _.0 _.8 _.9)
-     (absento (_.11 _.5) (lambda _.2)))
+          _.8)
+     (=/= ((_.0 _.1)))
+     (num _.3 _.4 _.6)
+     (sym _.0 _.1))
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
       (application-inner-k
-       (closure _.5 '_.0 (_.6 _.7))
-       (application-inner-k
-        (closure _.8 _.8 (_.9 _.10))
-        (empty-k)
-        _.0)
-       _.0)
+       (closure _.5 _.5 (_.6 _.7))
+       (empty-k)
+       _.8)
       _.0)
-     (=/= ((_.5 quote)))
-     (sym _.5 _.8)
-     (absento (closure _.0) '_.1 '_.6))
+     (sym _.5)
+     (absento (closure _.0) '_.1))
     (((lambda (_.0) _.1)
       (_.2 _.3)
       (_.4 _.5)
       (application-inner-k
        (closure _.6 '_.7 (_.8 _.9))
-       (application-inner-k
-        (closure _.10 '(_.0 _.1 (_.2 _.3)) (_.11 _.12))
-        (list-aux-inner-k closure (empty-k))
-        (_.0 _.1 (_.2 _.3)))
-       _.7)
-      (closure _.0 _.1 (_.2 _.3)))
-     (=/= ((_.0 closure)) ((_.10 quote)) ((_.6 quote)))
-     (sym _.0 _.10 _.6)
-     (absento (closure _.1) (closure _.2) (closure _.3)
-              (closure _.7) (lambda _.2) '_.11 '_.8))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.2 . _.4) ((_.5 . _.6) . _.7))
-          (application-inner-k
-           (closure _.8 '_.6 (_.9 _.10))
-           (list-aux-inner-k _.5 (empty-k))
-           _.6)
-          (_.5 . _.6))
-     (=/= ((_.8 quote)))
-     (num _.2)
-     (sym _.0 _.8)
-     (absento (closure _.6) '_.9))
-    (('_.0
-      (_.1 _.2)
-      ((_.3 . _.4) (_.0 . _.5))
-      (application-inner-k
-       (closure _.6 _.7 ((_.7 . _.8) (_.3 . _.9)))
-       (empty-k)
-       _.0)
-      _.0)
-     (=/= ((_.6 _.7)))
-     (num _.3)
-     (sym _.6 _.7)
-     (absento (closure _.0) '_.1))
-    (('(_.0 . _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (application-inner-k
-       (closure _.6 (lambda (_.7) _.8) (_.9 _.10))
-       (application-inner-k
-        (closure _.11 '_.1 (_.12 _.13))
-        (list-aux-inner-k _.0 (empty-k))
-        _.1)
-       (closure _.7 _.8 ((_.6 . _.9) (_.14 . _.10))))
-      (_.0 . _.1))
-     (=/= ((_.11 quote)) ((_.6 lambda)))
-     (num _.14)
-     (sym _.11 _.6 _.7)
-     (absento (_.14 _.4) (closure _.0) (closure _.1) (lambda _.9)
-              '_.12 '_.2))
-    (((list '_.0) (_.1 _.2) _.3 (empty-k) (_.0))
-     (absento (closure _.0) (list _.1) '_.1))
-    (('(_.0 . _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (list-aux-outer-k
-       (_.6)
-       _.7
-       (application-inner-k
-        (closure _.8 '_.1 (_.9 _.10))
-        (list-aux-inner-k _.0 (empty-k))
-        _.1)
-       ())
-      (_.0 . _.1))
-     (=/= ((_.8 quote)))
-     (sym _.8)
-     (absento (closure _.0) (closure _.1) '_.2 '_.9))
-    (((lambda (_.0) _.1)
-      ((_.2 . _.3) (_.4 . _.5))
-      (_.6 _.7)
-      (list-aux-inner-k
-       _.8
-       (application-inner-k
-        (closure _.2 (lambda (_.0) _.1) (_.3 _.5))
-        (empty-k)
-        (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5)))))
-      (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5))))
-     (=/= ((_.2 lambda)))
-     (num _.4)
-     (sym _.0 _.2)
-     (absento (_.4 _.6) (lambda _.3)))
-    (('(_.0 _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (application-inner-k
-       (closure _.6 '_.1 (_.7 _.8))
-       (list-aux-outer-k
-        (_.9)
-        _.10
-        (list-aux-inner-k _.0 (empty-k))
-        ())
-       _.1)
-      (_.0 _.1))
-     (=/= ((_.6 quote)))
-     (sym _.6)
-     (absento (closure _.0) (closure _.1) '_.2 '_.7))
-    ((((lambda (_.0) '_.1) '_.2)
-      (_.3 _.4)
-      (_.5 _.6)
-      (empty-k)
-      _.1)
-     (=/= ((_.0 quote)))
-     (sym _.0)
-     (absento (closure _.1) (closure _.2) (lambda _.3) '_.3))
-    ((_.0 ((_.0 . _.1) (_.2 . _.3))
-          ((_.4 _.2 . _.5)
-           (_.6 (closure _.7 _.8 ((_.9 . _.10) (_.11 . _.12))) . _.13))
-          (application-inner-k
-           (closure _.9 (lambda (_.7) _.8) (_.10 _.12))
-           (empty-k)
-           (closure _.7 _.8 ((_.9 . _.10) (_.11 . _.12))))
-          (closure _.7 _.8 ((_.9 . _.10) (_.11 . _.12))))
-     (=/= ((_.11 _.2)) ((_.11 _.4)) ((_.2 _.4)) ((_.9 lambda)))
-     (num _.11 _.2 _.4)
-     (sym _.0 _.7 _.9)
-     (absento (_.11 _.5) (lambda _.10)))
-    (((lambda (_.0) _.1)
-      ((_.2 . _.3) (_.4 . _.5))
-      (_.6 _.7)
-      (application-inner-k
-       (closure _.8 (lambda (_.9) _.10) (_.11 _.12))
-       (application-inner-k
-        (closure _.2 (lambda (_.0) _.1) (_.3 _.5))
-        (empty-k)
-        (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5))))
-       (closure _.9 _.10 ((_.8 . _.11) (_.13 . _.12))))
-      (closure _.0 _.1 ((_.2 . _.3) (_.4 . _.5))))
-     (=/= ((_.13 _.4)) ((_.2 lambda)) ((_.8 lambda)))
-     (num _.13 _.4)
-     (sym _.0 _.2 _.8 _.9)
-     (absento (_.13 _.6) (_.4 _.6) (lambda _.11) (lambda _.3)))
-    (('_.0
-      (_.1 _.2)
-      (_.3 _.4)
-      (list-aux-inner-k
-       _.5
-       (list-aux-inner-k
-        _.6
-        (application-inner-k
-         (closure _.7 '_.0 (_.8 _.9))
-         (empty-k)
-         _.0)))
-      _.0)
-     (=/= ((_.7 quote)))
-     (sym _.7)
-     (absento (closure _.0) '_.1 '_.8))
-    (((lambda (_.0) _.1)
-      (_.2 _.3)
-      (_.4 _.5)
-      (application-inner-k
-       (closure _.6 '(_.1 (_.2 _.3)) (_.7 _.8))
-       (list-aux-inner-k _.0 (list-aux-inner-k closure (empty-k)))
-       (_.1 (_.2 _.3)))
-      (closure _.0 _.1 (_.2 _.3)))
+       (list-aux-inner-k _.10 (empty-k))
+       _.11)
+      (_.10 . _.7))
      (=/= ((_.6 quote)))
      (sym _.0 _.6)
-     (absento (closure _.1) (closure _.2) (closure _.3)
-              (lambda _.2) '_.7))
-    ((_.0 ((_.1 _.0 . _.2) (_.3 _.4 . _.5))
-          ((_.4 _.6 . _.7) (_.8 _.9 . _.10))
-          (application-inner-k
-           (closure _.11 '_.8 (_.12 _.13))
-           (empty-k)
-           _.8)
-          _.8)
-     (=/= ((_.0 _.1)) ((_.11 quote)))
-     (num _.3 _.4 _.6)
-     (sym _.0 _.1 _.11)
-     (absento (closure _.8) '_.12))
+     (absento (closure _.7) (lambda _.2) '_.8))
     (('_.0
       (_.1 _.2)
-      (_.3 _.4)
+      _.3
       (list-aux-outer-k
-       (_.5)
-       _.6
-       (list-aux-inner-k
-        _.7
-        (application-inner-k
-         (closure _.8 '_.0 (_.9 _.10))
-         (empty-k)
-         _.0))
+       (_.4)
+       _.5
+       (list-aux-inner-k _.6 (empty-k))
        ())
-      _.0)
-     (=/= ((_.8 quote)))
-     (sym _.8)
-     (absento (closure _.0) '_.1 '_.9))
+      (_.6 _.0))
+     (absento (closure _.0) '_.1))
     (('_.0
       (_.1 _.2)
       (_.3 _.4)
@@ -862,16 +577,347 @@
        _.5
        (application-inner-k
         (closure _.6 (lambda (_.7) _.8) (_.9 _.10))
-        (application-inner-k
-         (closure _.11 '_.0 (_.12 _.13))
-         (empty-k)
-         _.0)
-        (closure _.7 _.8 ((_.6 . _.9) (_.14 . _.10)))))
+        (empty-k)
+        _.11))
+      (closure _.7 _.8 ((_.6 . _.9) (_.12 . _.10))))
+     (=/= ((_.6 lambda)))
+     (num _.12)
+     (sym _.6 _.7)
+     (absento (_.12 _.3) (closure _.0) (lambda _.9) '_.1))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 '_.6 (_.7 _.8))
+       (application-inner-k
+        (closure _.9 (lambda (_.10) _.11) (_.12 _.13))
+        (empty-k)
+        _.14)
+       _.15)
+      (closure _.10 _.11 ((_.9 . _.12) (_.16 . _.13))))
+     (=/= ((_.5 quote)) ((_.9 lambda)))
+     (num _.16)
+     (sym _.10 _.5 _.9)
+     (absento (_.16 _.3) (closure _.0) (closure _.6)
+              (lambda _.12) '_.1 '_.7))
+    ((_.0 ((_.0 . _.1) (_.2 . _.3))
+          ((_.2 . _.4) (_.5 . _.6))
+          (list-aux-inner-k _.7 (empty-k))
+          (_.7 . _.5))
+     (num _.2)
+     (sym _.0))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 (lambda (_.6) _.7) (_.8 _.9))
+       (list-aux-inner-k _.10 (empty-k))
+       _.11)
+      (_.10 closure _.6 _.7 ((_.5 . _.8) (_.12 . _.9))))
+     (=/= ((_.5 lambda)))
+     (num _.12)
+     (sym _.5 _.6)
+     (absento (_.12 _.3) (closure _.0) (lambda _.8) '_.1))
+    ((_.0 ((_.0 . _.1) (_.2 . _.3))
+          ((_.2 . _.4) (_.5 . _.6))
+          (application-inner-k
+           (closure _.7 '_.8 (_.9 _.10))
+           (empty-k)
+           _.11)
+          _.8)
+     (=/= ((_.7 quote)))
+     (num _.2)
+     (sym _.0 _.7)
+     (absento (closure _.8) '_.9))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 (lambda (_.6) _.7) (_.8 _.9))
+       (application-inner-k
+        (closure _.10 '_.11 (_.12 _.13))
+        (empty-k)
+        _.14)
+       _.15)
+      _.11)
+     (=/= ((_.10 quote)) ((_.5 lambda)))
+     (sym _.10 _.5 _.6)
+     (absento (closure _.0) (closure _.11) (lambda _.8) '_.1
+              '_.12))
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      _.4
+      (list-aux-outer-k (_.5) _.6 (empty-k) ())
+      ((closure _.0 _.1 (_.2 _.3))))
+     (sym _.0)
+     (absento (lambda _.2)))
+    ((_.0 ((_.0 . _.1) (_.2 . _.3))
+          ((_.4 _.5 _.2 . _.6) (_.7 _.8 _.9 . _.10))
+          (empty-k)
+          _.9)
+     (=/= ((_.2 _.4)) ((_.2 _.5)))
+     (num _.2 _.4 _.5)
+     (sym _.0))
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      (_.4 _.5)
+      (application-inner-k
+       (closure _.6 '_.7 (_.8 _.9))
+       (application-inner-k
+        (closure _.10 '_.11 (_.12 _.13))
+        (empty-k)
+        _.14)
+       _.15)
+      _.11)
+     (=/= ((_.10 quote)) ((_.6 quote)))
+     (sym _.0 _.10 _.6)
+     (absento (closure _.11) (closure _.7) (lambda _.2) '_.12
+              '_.8))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (list-aux-outer-k
+       (_.5)
+       _.6
+       (application-inner-k
+        (closure _.7 '_.8 (_.9 _.10))
+        (empty-k)
+        _.11)
+       ())
+      _.8)
+     (=/= ((_.7 quote)))
+     (sym _.7)
+     (absento (closure _.0) (closure _.8) '_.1 '_.9))
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      _.4
+      (list-aux-inner-k _.5 (list-aux-inner-k _.6 (empty-k)))
+      (_.6 _.5 closure _.0 _.1 (_.2 _.3)))
+     (sym _.0)
+     (absento (lambda _.2)))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 '_.6 (_.7 _.8))
+       (list-aux-outer-k (_.9) _.10 (empty-k) ())
+       _.11)
+      (_.6))
+     (=/= ((_.5 quote)))
+     (sym _.5)
+     (absento (closure _.0) (closure _.6) '_.1 '_.7))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 (list) (_.6 _.7))
+       (empty-k)
+       ())
+      ())
+     (=/= ((_.5 list)))
+     (sym _.5)
+     (absento (closure _.0) (list _.6) '_.1))
+    (((lambda (_.0) '_.1)
+      (_.2 _.3)
+      (_.4 _.5)
+      (application-outer-k '_.6 (_.7 _.8) (empty-k) _.9)
+      _.1)
+     (=/= ((_.0 quote)))
+     (sym _.0)
+     (absento (closure _.1) (closure _.6) (lambda _.2) '_.2
+              '_.7))
+
+;;; weird? maybe?
+    (('_.0
+      (_.1 _.2)
+      ((_.3 . _.4) (_.5 . _.6))
+      (application-inner-k
+       (closure _.7 _.8 ((_.8 . _.9) (_.10 . _.11)))
+       (empty-k)
+       _.12)
       _.0)
-     (=/= ((_.11 quote)) ((_.6 lambda)))
-     (num _.14)
-     (sym _.11 _.6 _.7)
-     (absento (_.14 _.3) (closure _.0) (lambda _.9) '_.1 '_.12))))
+     (=/= ((_.10 _.3)) ((_.7 _.8)))
+     (num _.10 _.3)
+     (sym _.7 _.8)
+     (absento (_.10 _.4) (closure _.0) '_.1))
+    
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      (_.4 _.5)
+      (application-inner-k
+       (closure _.6 _.6 (_.7 _.8))
+       (empty-k)
+       _.9)
+      (closure _.0 _.1 (_.2 _.3)))
+     (sym _.0 _.6)
+     (absento (lambda _.2)))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (list-aux-inner-k
+       _.5
+       (application-inner-k
+        (closure _.6 '_.7 (_.8 _.9))
+        (list-aux-inner-k _.10 (empty-k))
+        _.11))
+      (_.10 . _.7))
+     (=/= ((_.6 quote)))
+     (sym _.6)
+     (absento (closure _.0) (closure _.7) '_.1 '_.8))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 '_.6 (_.7 _.8))
+       (application-inner-k
+        (closure _.9 '_.10 (_.11 _.12))
+        (list-aux-inner-k _.13 (empty-k))
+        _.14)
+       _.15)
+      (_.13 . _.10))
+     (=/= ((_.5 quote)) ((_.9 quote)))
+     (sym _.5 _.9)
+     (absento (closure _.0) (closure _.10) (closure _.6) '_.1
+              '_.11 '_.7))
+    ((_.0 ((_.0 . _.1) (_.2 . _.3))
+          ((_.2 . _.4) (_.5 . _.6))
+          (application-inner-k
+           (closure _.7 (lambda (_.8) _.9) (_.10 _.11))
+           (empty-k)
+           _.12)
+          (closure _.8 _.9 ((_.7 . _.10) (_.13 . _.11))))
+     (=/= ((_.13 _.2)) ((_.7 lambda)))
+     (num _.13 _.2)
+     (sym _.0 _.7 _.8)
+     (absento (_.13 _.4) (lambda _.10)))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 (lambda (_.6) _.7) (_.8 _.9))
+       (application-inner-k
+        (closure _.10 (lambda (_.11) _.12) (_.13 _.14))
+        (empty-k)
+        _.15)
+       _.16)
+      (closure _.11 _.12 ((_.10 . _.13) (_.17 . _.14))))
+     (=/= ((_.10 lambda)) ((_.5 lambda)))
+     (num _.17)
+     (sym _.10 _.11 _.5 _.6)
+     (absento (_.17 _.3) (closure _.0) (lambda _.13) (lambda _.8)
+              '_.1))
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      (_.4 _.5)
+      (application-inner-k
+       (closure _.6 '_.7 (_.8 _.9))
+       (application-inner-k
+        (closure _.10 (lambda (_.11) _.12) (_.13 _.14))
+        (empty-k)
+        _.15)
+       _.16)
+      (closure _.11 _.12 ((_.10 . _.13) (_.17 . _.14))))
+     (=/= ((_.10 lambda)) ((_.6 quote)))
+     (num _.17)
+     (sym _.0 _.10 _.11 _.6)
+     (absento (_.17 _.4) (closure _.7) (lambda _.13) (lambda _.2)
+              '_.8))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (list-aux-outer-k
+       (_.5)
+       _.6
+       (application-inner-k
+        (closure _.7 (lambda (_.8) _.9) (_.10 _.11))
+        (empty-k)
+        _.12)
+       ())
+      (closure _.8 _.9 ((_.7 . _.10) (_.13 . _.11))))
+     (=/= ((_.7 lambda)))
+     (num _.13)
+     (sym _.7 _.8)
+     (absento (_.13 _.3) (closure _.0) (lambda _.10) '_.1))
+    (((lambda (_.0) (lambda (_.1) _.2))
+      (_.3 _.4)
+      (_.5 _.6)
+      (application-outer-k '_.7 (_.8 _.9) (empty-k) _.10)
+      (closure _.1 _.2 ((_.0 . _.3) (_.11 . _.4))))
+     (=/= ((_.0 lambda)))
+     (num _.11)
+     (sym _.0 _.1)
+     (absento (_.11 _.5) (closure _.7) (lambda _.3) '_.8))
+    ((_.0 ((_.0 . _.1) (_.2 . _.3))
+          ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
+          (list-aux-inner-k _.9 (empty-k))
+          (_.9 . _.7))
+     (=/= ((_.2 _.4)))
+     (num _.2 _.4)
+     (sym _.0))
+    (('_.0
+      (_.1 _.2)
+      (_.3 _.4)
+      (application-inner-k
+       (closure _.5 '_.6 (_.7 _.8))
+       (list-aux-inner-k _.9 (list-aux-inner-k _.10 (empty-k)))
+       _.11)
+      (_.10 _.9 . _.6))
+     (=/= ((_.5 quote)))
+     (sym _.5)
+     (absento (closure _.0) (closure _.6) '_.1 '_.7))
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      (_.4 _.5)
+      (list-aux-inner-k
+       _.6
+       (application-inner-k
+        (closure _.7 '_.8 (_.9 _.10))
+        (empty-k)
+        _.11))
+      _.8)
+     (=/= ((_.7 quote)))
+     (sym _.0 _.7)
+     (absento (closure _.8) (lambda _.2) '_.9))
+    (((lambda (_.0) _.1)
+      (_.2 _.3)
+      (_.4 _.5)
+      (application-inner-k
+       (closure _.6 (lambda (_.7) _.8) (_.9 _.10))
+       (list-aux-inner-k _.11 (empty-k))
+       _.12)
+      (_.11 closure _.7 _.8 ((_.6 . _.9) (_.13 . _.10))))
+     (=/= ((_.6 lambda)))
+     (num _.13)
+     (sym _.0 _.6 _.7)
+     (absento (_.13 _.4) (lambda _.2) (lambda _.9)))
+    (((list)
+      (_.0 _.1)
+      (_.2 _.3)
+      (application-inner-k
+       (closure _.4 '() (_.5 _.6))
+       (empty-k)
+       _.7)
+      ())
+     (=/= ((_.4 quote)))
+     (sym _.4)
+     (absento (list _.0) '_.5))
+    (('_.0
+      (_.1 _.2)
+      _.3
+      (list-aux-outer-k (_.4 '_.5) (_.6 _.7) (empty-k) (_.8))
+      (_.0 _.5))
+     (absento (closure _.0) (closure _.5) '_.1 '_.6))
+    ((_.0 ((_.0 . _.1) (_.2 . _.3))
+          ((_.4 _.2 . _.5) (_.6 _.7 . _.8))
+          (application-inner-k
+           (closure _.9 '_.10 (_.11 _.12))
+           (empty-k)
+           _.13)
+          _.10)
+     (=/= ((_.2 _.4)) ((_.9 quote)))
+     (num _.2 _.4)
+     (sym _.0 _.9)
+     (absento (closure _.10) '_.11))))
 
 (test "cesk-quinec-bkwards-a"
   (run 1 (q)
@@ -1021,59 +1067,6 @@
      (sym _.0 _.1)
      (absento (closure _.2)))))
 
-;;; debug-related tests
-;;; trying to understand v-out behavior
-(test "cesk-application-inner-k-1"
-  (run* (q)
-    (fresh (expr env store k val env^ v-out)
-      (== `(quote _.0) expr)
-      (== `(_.1 _.2) env)
-      (== `(_.3 _.4) store)
-      (==
-       `(application-inner-k
-         (closure _.5 (quote _.0) (_.6 _.7))
-         (empty-k)
-         _.0)
-          k)
-      (eval-expo
-       expr
-       env
-       store
-       k
-       val)
-      (== `(,expr ,env ,store ,k ,val) q)))
-  '(((quote _.0)
-     (_.1 _.2)
-     (_.3 _.4)
-     (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
-     _.0)))
-
-;;; This test currently fails, with the run expression returning the empty list
-;;; I think this test should pass, though.
-;; (test "cesk-application-inner-k-2"
-;;   (run* (q)
-;;     (fresh (expr env store k val env^ v-out)
-;;       (== `(quote _.0) expr)
-;;       (== `(_.1 _.2) env)
-;;       (== `(_.3 _.4) store)
-;;       (==
-;;        `(application-inner-k
-;;          (closure _.5 (quote _.8) (_.6 _.7))
-;;          (empty-k)
-;;          ,v-out)
-;;           k)
-;;       (eval-expo
-;;        expr
-;;        env
-;;        store
-;;        k
-;;        val)
-;;       (== `(,expr ,env ,store ,k ,val) q)))
-;;   '(((quote _.8)
-;;      (_.1 _.2)
-;;      (_.3 _.4)
-;;      (application-inner-k (closure _.5 (quote _.0) (_.6 _.7)) (empty-k) _.0)
-;;      _.8)))
 
 #!eof
 
