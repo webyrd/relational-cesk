@@ -1,4 +1,4 @@
-(library (cesk-quines)
+(library (cesk-scheme)
   (export evalo eval-expo empty-env empty-store empty-k)
   (import (rnrs) (mk-lib) (lookupo-lib))
 
@@ -44,7 +44,15 @@
          (== empty-k k^)
          (== v/s out)
          (== (answer v s) v/s))
-       ]
+        ]
+      [(fresh (x env k v s^ addr s^^)
+         (== (set!-k x env k) k^)
+         (== `(,v . ,s^) v/s)
+         (numbero addr)
+         (ext-storeo addr v s^ s^^)
+         (lookup-env-only-auxo x env addr)
+         (apply-ko k (answer 'void s^^) out)
+         )]
       [(fresh (p k a s^^ v-out^)
          (== (application-inner-k p k v-out^) k^)
          (== (answer a s^^) v/s)
@@ -98,14 +106,20 @@
   (lambda (e* env k v-out^)
     `(list-aux-outer-k ,e* ,env ,k ,v-out^)))
 
+(define set!-k
+  (lambda (x env k)
+    `(set!-k ,x ,env ,k)))
+
 (define eval-exp-auxo
   (lambda (exp env s k out v-out)
     (conde
       [(fresh (datum ans)
          (== `(quote ,datum) exp)
          (== datum v-out) ; v-out
-         (== (answer datum s) ans)         
-         (absento 'closure datum)
+         (== (answer datum s) ans)
+         (fresh ()
+           (absento 'closure datum)
+           (absento 'void datum))
          (not-in-envo 'quote env)
          (apply-ko k ans out))]
       [(fresh (x body ans)
@@ -121,6 +135,12 @@
          (== v v-out) ; v-out
          (== (answer v s) ans)
          (apply-ko k ans out))]
+       [(fresh (x e v-out-ignore)
+         (== `(set! ,x ,e) exp)
+         (not-in-envo 'set! env)
+         (symbolo x)
+         ; (== 'void v-out) ; v-out
+         (eval-exp-auxo e env s (set!-k x env k) out v-out-ignore))]
       [(fresh (rator rand v-out-ignore)
          (== `(,rator ,rand) exp)
          (eval-exp-auxo rator env s (application-outer-k rand env k v-out) out v-out-ignore) ; v-out
