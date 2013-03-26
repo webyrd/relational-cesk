@@ -727,7 +727,6 @@
      (absento (closure _.1) (closure _.6) (lambda _.2) '_.2
               '_.7))
 
-;;; weird? maybe?
     (('_.0
       (_.1 _.2)
       ((_.3 . _.4) (_.5 . _.6))
