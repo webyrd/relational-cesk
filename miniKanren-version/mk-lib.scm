@@ -1,8 +1,8 @@
 ;;; newer version: 19 March 2013
 
 (library (mk-lib)
-  (export == =/= symbolo numbero absento fresh conde run run* project conda condu)
-  (import (rnrs) (only (chezscheme) sort sub1))
+  (export == =/= symbolo numbero absento fresh conde run run* project conda condu errorg)
+  (import (rnrs) (only (chezscheme) sort sub1 printf))
 
 (define empty-c '(() () () () ())) ;; moved 
 
@@ -827,6 +827,13 @@
          (or
            (and (eq? big big^) (member* lit^ lit))
            (subsumed-T? lit big (cdr T))))))))
+
+(define errorg
+  (lambda (name msg q)
+    (lambdag@ (c)
+      (let ((ans ((reify q) c)))
+        (printf msg ans)
+        (error name "")))))
 
 (define LOF
   (lambda ()
