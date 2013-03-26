@@ -183,6 +183,8 @@
 
 ;;; datastructures based on higher-order functions
 
+;;; mutable cell
+
 (test "cell-get-1"
   (run* (q)
     (evalo
@@ -353,6 +355,98 @@
       (== q `(,code-bang ,code-get))))
   '(((lambda (new-value) (set! value new-value))
       (lambda (dummy) value))))
+
+;;; mutable list
+
+(test "mutable-list-1"
+  (run* (q)
+    (evalo
+      `((lambda (new-list)
+          ((lambda (l)
+             (l (lambda (freeze) (lambda (set-first!) (lambda (set-second!) (freeze l))))))
+            ((new-list (quote first)) (quote second))))
+         (lambda (first)
+           (lambda (second)
+             ((lambda (freeze)
+                ((lambda (set-first!)
+                   ((lambda (set-second!)
+                      (lambda (f)
+                        (((f freeze) set-first!) set-second!)))
+                     (lambda (new-second) (set! second new-second))))
+                  (lambda (new-first) (set! first new-first))))
+               (lambda (dummy) (list first second))))))
+      q))
+  '((first second)))
+
+(test "mutable-list-2"
+  (run* (q)
+    (evalo
+      `((lambda (new-list)
+          ((lambda (l)
+             (l (lambda (freeze) (lambda (set-first!) (lambda (set-second!)
+                                              ((lambda (ignore) (freeze l))
+                                               (set-first! (quote coming))))))))
+            ((new-list (quote first)) (quote second))))
+         (lambda (first)
+           (lambda (second)
+             ((lambda (freeze)
+                ((lambda (set-first!)
+                   ((lambda (set-second!)
+                      (lambda (f)
+                        (((f freeze) set-first!) set-second!)))
+                     (lambda (new-second) (set! second new-second))))
+                  (lambda (new-first) (set! first new-first))))
+               (lambda (dummy) (list first second))))))
+      q))
+  '((coming second)))
+
+(test "mutable-list-3"
+  (run* (q)
+    (evalo
+      `((lambda (new-list)
+          ((lambda (l)
+             (l (lambda (freeze) (lambda (set-first!) (lambda (set-second!)
+                                              ((lambda (ignore) (freeze l))
+                                                ((lambda (ignore)
+                                                   (set-first! (quote hello)))
+                                                  (set-second! (quote world)))))))))
+            ((new-list (quote first)) (quote second))))
+         (lambda (first)
+           (lambda (second)
+             ((lambda (freeze)
+                ((lambda (set-first!)
+                   ((lambda (set-second!)
+                      (lambda (f)
+                        (((f freeze) set-first!) set-second!)))
+                     (lambda (new-second) (set! second new-second))))
+                  (lambda (new-first) (set! first new-first))))
+               (lambda (dummy) (list first second))))))
+      q))
+  '((hello world)))
+
+(test "mutable-list-4"
+  (run* (q)
+    (evalo
+      `((lambda (new-list)
+          ((lambda (l)
+             (l (lambda (freeze) (lambda (set-first!) (lambda (set-second!)
+                                              ((lambda (ignore) (freeze l))
+                                                ((lambda (ignore)
+                                                   (set-first! (quote coming)))
+                                                  (set-first! (quote ignored)))))))))
+            ((new-list (quote first)) (quote second))))
+         (lambda (first)
+           (lambda (second)
+             ((lambda (freeze)
+                ((lambda (set-first!)
+                   ((lambda (set-second!)
+                      (lambda (f)
+                        (((f freeze) set-first!) set-second!)))
+                     (lambda (new-second) (set! second new-second))))
+                  (lambda (new-first) (set! first new-first))))
+               (lambda (dummy) (list first second))))))
+      q))
+  '((coming second)))
 
 ;;; other tests
 
