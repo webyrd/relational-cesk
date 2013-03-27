@@ -3,6 +3,20 @@
 
 ;;; examples of the v-out technique
 
+;;; punchline for rembero examples:
+;;;
+;;; CPSing rembero causes this test to diverge:
+;;;
+;;;  (test "rembero-8"
+;;;    (run* (q)
+;;;      (fresh (rest-a rest-b)
+;;;        (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
+;;;    '())
+;;;
+;;; v-out allows this test to fail finitely once again.  Seems like
+;;; CPS + v-out results in same divergence behavior as direct style.
+;;; Is there a way to prove this?
+
 (let ()
 
   (define rember
@@ -42,7 +56,9 @@
 ;;;        (rembero q `(x y . ,rest-a) `(x z w y . ,rest-b))))
 ;;;    '())
 ;;;
-;;; Can we use v-out or something similar to reclaim the association with 'out'?  I'm doubtful, since in this case it seems like we must perform recursion to learn anything about 'out'.
+;;; Can we use v-out or something similar to reclaim the association
+;;; with 'out'?  I'm doubtful, since in this case it seems like we
+;;; must perform recursion to learn anything about 'out'.
            (rembero x d out))]
         [(fresh (a d res)
            (== `(,a . ,d) ls)
@@ -104,6 +120,12 @@
   ;;   (run* (q)
   ;;     (rembero 'x q '(x z w y)))
   ;;   '())
+
+  (test "rembero-8"
+    (run* (q)
+      (fresh (rest-a rest-b)
+        (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
+    '())
   
   )
 
@@ -222,6 +244,11 @@
   ;;     (rembero 'x q '(x z w y)))
   ;;   '())
 
+  (test "rembero-8"
+    (run* (q)
+      (fresh (rest-a rest-b)
+        (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
+    '()) 
   
   )
 
@@ -404,6 +431,13 @@
   ;;   (run* (q)
   ;;     (rembero 'x q '(x z w y)))
   ;;   '())
+
+;;; diverges due to CPS!!!!  
+;  (test "rembero-8"
+;    (run* (q)
+;      (fresh (rest-a rest-b)
+;        (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
+;    '())
   
   )
 
@@ -534,8 +568,6 @@
 ;        (rembero q `(x y . ,rest-a) `(x z w y . ,rest-b))))
 ;    '())
 
-;;; Is there a test that converges for direct-style rembero, diverges for CPS rembero, and converges for CPS rembero + v-out?
-
 ;;; diverge  
   ;; (test "rembero-7a"
   ;;   (run 1 (q)
@@ -546,5 +578,11 @@
   ;;   (run* (q)
   ;;     (rembero 'x q '(x z w y)))
   ;;   '())
+
+  (test "rembero-8"
+    (run* (q)
+      (fresh (rest-a rest-b)
+        (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
+    '())
   
   )
