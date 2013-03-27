@@ -635,8 +635,8 @@
            (== `(,a . ,res) out)
            (conde
              [(absento x d)
-              (== ls out)]
-             [(=/= ls out)
+              (== d res)]
+             [(=/= d res)
               (rembero-aux x d res)]))])))
 
   (define rembero
