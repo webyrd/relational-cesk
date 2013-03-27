@@ -27,7 +27,7 @@
         [else
          (cons (car ls) (rember x (cdr ls)))])))
 
-  (printf "*** vanilla direct-style Scheme remember\n")
+  (printf "*** vanilla direct-style Scheme rember\n")
   
   (test "rember-1"
     (rember 'y '(x y z y w y y v))
@@ -66,7 +66,7 @@
            (== `(,a . ,res) out)
            (rembero x d res))])))
 
-  (printf "*** vanilla direct-style remembero\n")
+  (printf "*** vanilla direct-style rembero\n")
   
   (test "rembero-1"
     (run* (q)
@@ -153,7 +153,7 @@
         (== out v-out)
         (rembero-aux x ls out v-out))))
 
-;;; direct style remembero, just for testing
+;;; direct style rembero, just for testing
   (define direct-rembero
     (lambda (x ls out)
       (conde
@@ -167,7 +167,7 @@
            (== `(,a . ,res) out)
            (direct-rembero x d res))])))
   
-  (printf "*** direct-style remembero with v-out\n")
+  (printf "*** direct-style rembero with v-out\n")
   
   (test "rembero-1"
     (run* (q)
@@ -268,7 +268,7 @@
     (lambda (x ls)
       (rember-cps x ls (lambda (x) x))))
   
-  (printf "*** CPS Scheme remember w/higher-order continuations\n")
+  (printf "*** CPS Scheme rember w/higher-order continuations\n")
   
   (test "rember-1"
     (rember 'y '(x y z y w y y v))
@@ -300,7 +300,7 @@
     (lambda (x ls)
       (rember-cps x ls empty-k)))
   
-  (printf "*** CPS Scheme remember w/higher-order (RI) continuations\n")
+  (printf "*** CPS Scheme rember w/higher-order (RI) continuations\n")
   
   (test "rember-1"
     (rember 'y '(x y z y w y y v))
@@ -336,7 +336,7 @@
     (lambda (x ls)
       (rember-cps x ls empty-k)))
   
-  (printf "*** CPS Scheme remember w/data-structural continuations\n")
+  (printf "*** CPS Scheme rember w/data-structural continuations\n")
   
   (test "rember-1"
     (rember 'y '(x y z y w y y v))
@@ -377,7 +377,7 @@
     (lambda (x ls out)
       (rember-cpso x ls empty-k out)))
   
-  (printf "*** vanilla CPS remembero\n")
+  (printf "*** vanilla CPS rembero\n")
   
   (test "rembero-1"
     (run* (q)
@@ -487,7 +487,7 @@
         (rember-cpso x ls empty-k out v-out))))
 
 
-;;; direct style remembero, just for testing
+;;; direct style rembero, just for testing
   (define direct-rembero
     (lambda (x ls out)
       (conde
@@ -501,7 +501,7 @@
            (== `(,a . ,res) out)
            (direct-rembero x d res))])))
   
-  (printf "*** CPS remembero with v-out\n")
+  (printf "*** CPS rembero with v-out\n")
 
   (test "rembero-1"
     (run* (q)
@@ -616,7 +616,7 @@
         (absento x out)
         (rembero-aux x ls out))))
   
-;;; direct style remembero, just for testing
+;;; direct style rembero, just for testing
   (define direct-rembero
     (lambda (x ls out)
       (conde
@@ -630,7 +630,7 @@
            (== `(,a . ,res) out)
            (direct-rembero x d res))])))
   
-  (printf "*** vanilla direct-style remembero, but using absento\n")
+  (printf "*** vanilla direct-style rembero, but using absento\n")
   
   (test "rembero-1"
     (run* (q)
