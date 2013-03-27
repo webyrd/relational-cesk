@@ -110,3 +110,49 @@
             empty-s
             empty-k)
   5)
+
+#!eof
+
+(test "call/cc-1"
+  (eval-exp '(call/cc (lambda (k) 20))
+            empty-env
+            empty-s
+            empty-k)
+  20)
+
+(test "call/cc-2"
+  (eval-exp '(call/cc (lambda (k) (k 20)))
+            empty-env
+            empty-s
+            empty-k)
+  20)
+
+#!eof
+
+;;; a few old call/cc tests from IU's C311 course
+
+(call/cc (lambda (k)
+           (* 5 4)))
+
+; k = (lambda (v) v)
+
+(call/cc (lambda (k)
+           (k (* 5 4))))
+
+; k = (lambda (v) v)
+
+(call/cc (lambda (k)
+           (* 5 (k 4))))
+
+; k = (lambda (v) v)
+
+(+ 2 (call/cc (lambda (k)
+                (* 5 (k 4)))))
+
+; k = (lambda (v) (+ 2 v))
+
+(let ((x (call/cc (lambda (k) k))))
+  (x (lambda (ignore) "hi")))
+; k = (lambda (v) (let ((x v)) (x (lambda (ignore) "hi"))))
+
+(((call/cc (lambda (k) k)) (lambda (x) x)) "HEY!")
