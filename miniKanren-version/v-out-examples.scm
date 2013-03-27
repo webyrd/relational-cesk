@@ -317,7 +317,13 @@
            (== `(,a . ,d) ls)
            (=/= x a)
            (== `(,a . ,v-out-d) v-out)
-;;; interesting: not necessary to put v-out in the continuation.           
+;;; interesting: not necessary to put v-out in the continuation.  This
+;;; differs from 'list' in the interpreter, since we don't have to
+;;; evaluate 'a'. (In the interpreter, the first thing in the list is
+;;; an expression, not a value.)
+;;;
+;;; Would be nice to have a slightly more complex example that
+;;; required placing a v-out-related variable into the continuation.
            (rember-cpso x d (rember-k ls k) out v-out-d))])))
 
   (define rembero
