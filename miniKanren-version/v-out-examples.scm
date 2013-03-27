@@ -219,3 +219,70 @@
     '(x z w v))
 
   )
+
+(let ()
+
+  (define empty-k 'empty-k)
+
+  (define rember-k
+    (lambda (ls k)
+      `(rember-k ,ls ,k)))
+  
+  (define apply-ko
+    (lambda (k^ v out)
+      (conde
+        [(== empty-k k^) (== v out)]
+        [(fresh (ls k a d)
+           (== `(rember-k ,ls ,k) k^)
+           (== `(,a . ,d) ls)
+           (apply-ko k `(,a . ,v) out))])))
+
+  (define rember-cpso
+    (lambda (x ls k out)
+      (conde
+        [(== '() ls) (apply-ko k '() out)]
+        [(fresh (d)
+           (== `(,x . ,d) ls)
+           (rember-cpso x d k out))]
+        [(fresh (a d)
+           (== `(,a . ,d) ls)
+           (=/= x a)
+           (rember-cpso x d (rember-k ls k) out))])))
+
+  (define rembero
+    (lambda (x ls out)
+      (rember-cpso x ls empty-k out)))
+  
+  (printf "*** vanilla CPS remembero\n")
+  
+  (test "rembero-1"
+    (run* (q)
+      (rembero 'y '(x y z y w y y v) q))
+    '((x z w v)))
+
+  (test "rembero-2"
+    (run* (q)
+      (rembero q '(x y z y w y y v) '(x z w v)))
+    '(y))
+
+  (test "rembero-3"
+    (run 5 (q)
+      (rembero 'y q '(x z w v)))
+    '((x z w v)
+      (y x z w v)
+      (x y z w v)
+      (x z y w v)
+      (x z w y v)))
+
+  (test "rembero-4"
+    (run 5 (q)
+      (fresh (x ls out)
+        (rembero x ls out)
+        (== `(,x ,ls ,out) q)))
+    '((_.0 () ())
+      (_.0 (_.0) ())
+      ((_.0 (_.1) (_.1)) (=/= ((_.0 _.1))))
+      (_.0 (_.0 _.0) ())
+      ((_.0 (_.0 _.1) (_.1)) (=/= ((_.0 _.1))))))
+
+  )
