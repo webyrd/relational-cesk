@@ -1,7 +1,7 @@
 ;;; newer version: 19 March 2013
 
 (library (mk-lib)
-  (export == =/= symbolo numbero absento fresh conde run run* project conda condu errorg fails-unless-contains)
+  (export == =/= symbolo numbero absento fresh conde run run* project conda condu errorg fails-unless-contains fail)
   (import (rnrs) (only (chezscheme) sort sub1 printf))
 
 (define empty-c '(() () () () ())) ;; moved 
