@@ -1,7 +1,7 @@
 ;;; newer version: 19 March 2013
 
 (library (mk-lib)
-  (export == =/= symbolo numbero absento fresh conde run run* project conda condu errorg)
+  (export == =/= symbolo numbero absento fresh conde run run* project conda condu errorg fails-unless-contains)
   (import (rnrs) (only (chezscheme) sort sub1 printf))
 
 (define empty-c '(() () () () ())) ;; moved 
@@ -834,6 +834,14 @@
       (let ((ans ((reify q) c)))
         (printf msg ans)
         (error name "")))))
+
+(define fails-unless-contains
+  (lambda (q t)
+    (lambdag@ (c)
+      (let ((ans ((reify q) c)))
+        (if (member* t ans)
+            (succeed c)
+            (fail c))))))
 
 (define LOF
   (lambda ()
