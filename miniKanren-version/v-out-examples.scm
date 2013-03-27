@@ -127,3 +127,33 @@
       ((_.0 (_.1 _.0) (_.1)) (=/= ((_.0 _.1))))))
 
   )
+
+(let ()
+
+  (define empty-k (lambda (x) x))
+
+  (define apply-k
+    (lambda (k v)
+      (k v)))
+  
+  (define rember-cps
+    (lambda (x ls k)
+      (cond
+        [(null? ls) (apply-k k '())]
+        [(eq? x (car ls)) (rember-cps x (cdr ls) k)]
+        [else
+         (rember-cps x (cdr ls)
+                     (lambda (v)
+                       (apply-k k (cons (car ls) v))))])))
+
+  (define rember
+    (lambda (x ls)
+      (rember-cps x ls empty-k)))
+  
+  (printf "*** CPS Scheme remember w/higher-order continuations\n")
+  
+  (test "rember-1"
+    (rember 'y '(x y z y w y y v))
+    '(x z w v))
+
+  )
