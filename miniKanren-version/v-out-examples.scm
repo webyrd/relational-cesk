@@ -42,7 +42,7 @@
 ;;;        (rembero q `(x y . ,rest-a) `(x z w y . ,rest-b))))
 ;;;    '())
 ;;;
-;;; Can we use v-out or something similar to reclaim the association with 'out'???
+;;; Can we use v-out or something similar to reclaim the association with 'out'?  I'm doubtful, since in this case it seems like we must perform recursion to learn anything about 'out'.
            (rembero x d out))]
         [(fresh (a d res)
            (== `(,a . ,d) ls)
