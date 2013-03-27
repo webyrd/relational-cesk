@@ -20,7 +20,25 @@
   (run* (q)
     (evalo '(list (quote 1) (call/cc (lambda (k) (list (quote 2) (k (quote 3)))))) q))
   '((1 3)))
-  
+
+(test "call/cc-4"
+  (run* (q)
+    (evalo
+      '((lambda (r)
+          ((lambda (ignore)
+             (r (quote 5)))
+            (list
+              (quote 1)
+              (call/cc
+                (lambda (k)
+                  ((lambda (ignore)
+                     (list (quote 2) (k (quote 3))))
+                    ;; note: (set! r k) diverges, but also in Scheme
+                    (quote 0)))))))
+         (lambda (x) x))
+      q))
+  '(5))
+
 (test "cesk-quote-a"
   (run* (q)
     (evalo '(quote x) q))
