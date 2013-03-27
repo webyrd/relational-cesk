@@ -52,6 +52,22 @@
                   (let ((s^^ (ext-s loc a s^)))
                     (eval-exp body env^ s^^ k^)))))
             s)))
+      ((+ ,e1 ,e2)
+       (eval-exp e1 env s
+         (lambda (v1/s^)
+           (let ((v1 (car v1/s^)) (s^ (car v1/s^)))
+             (eval-exp e2 env s^
+               (lambda (v2/s^^)
+                 (let ((v2 (car v2/s^^)) (s^^ (car v2/s^^)))
+                   (k (+ v1 v2)))))))))      
+      ((* ,e1 ,e2)
+       (eval-exp e1 env s
+         (lambda (v1/s^)
+           (let ((v1 (car v1/s^)) (s^ (car v1/s^)))
+             (eval-exp e2 env s^
+               (lambda (v2/s^^)
+                 (let ((v2 (car v2/s^^)) (s^^ (car v2/s^^)))
+                   (k (* v1 v2)))))))))
       ((set! ,x ,rhs)
        (eval-exp rhs env s
          (lambda (v/s^)
@@ -59,6 +75,11 @@
                  (s^ (cdr v/s^)))
              (let ((loc (apply-env env x))) 
                (k (answer (void) (ext-s loc v s^))))))))
+      ((call/cc ,e)
+       (eval-exp e env s
+         (lambda (p/s^)
+           (let ((p (car p/s^)) (s^ (cdr p/s^)))             
+             (p (lambda (a s^^ k^) (k (answer a s^^))) s^ k)))))      
       ((begin ,rand1 ,rand2)
        (eval-exp rand1 env s
          (lambda (v1/s^)
@@ -111,8 +132,6 @@
             empty-k)
   5)
 
-#!eof
-
 (test "call/cc-1"
   (eval-exp '(call/cc (lambda (k) 20))
             empty-env
@@ -127,32 +146,45 @@
             empty-k)
   20)
 
-#!eof
+(test "call/cc-3"
+  (eval-exp '(call/cc (lambda (k)
+                        (* 5 4)))
+            empty-env
+            empty-s
+            empty-k)
+  (call/cc (lambda (k)
+             (* 5 4))))
 
-;;; a few old call/cc tests from IU's C311 course
+(test "call/cc-4"
+  (eval-exp '(call/cc (lambda (k)
+                        (k (* 5 4))))
+            empty-env
+            empty-s
+            empty-k)  
+  (call/cc (lambda (k)
+             (k (* 5 4)))))
 
-(call/cc (lambda (k)
-           (* 5 4)))
+(test "call/cc-5"
+  (eval-exp '(call/cc (lambda (k)
+                        (* 5 (k 4))))
+            empty-env
+            empty-s
+            empty-k)  
+  (call/cc (lambda (k)
+             (* 5 (k 4)))))
 
-; k = (lambda (v) v)
+(test "call/cc-6"
+(eval-exp '(+ 2 (call/cc (lambda (k)
+                           (* 5 (k 4)))))
+            empty-env
+            empty-s
+            empty-k)  
+  (+ 2 (call/cc (lambda (k)
+                  (* 5 (k 4))))))
 
-(call/cc (lambda (k)
-           (k (* 5 4))))
-
-; k = (lambda (v) v)
-
-(call/cc (lambda (k)
-           (* 5 (k 4))))
-
-; k = (lambda (v) v)
-
-(+ 2 (call/cc (lambda (k)
-                (* 5 (k 4)))))
-
-; k = (lambda (v) (+ 2 v))
-
-(let ((x (call/cc (lambda (k) k))))
-  (x (lambda (ignore) "hi")))
-; k = (lambda (v) (let ((x v)) (x (lambda (ignore) "hi"))))
-
-(((call/cc (lambda (k) k)) (lambda (x) x)) "HEY!")
+(test "call/cc-7"
+(eval-exp '(((call/cc (lambda (k) k)) (lambda (x) x)) (quote "HEY!"))
+            empty-env
+            empty-s
+            empty-k)  
+  (((call/cc (lambda (k) k)) (lambda (x) x)) (quote "HEY!")))
