@@ -38,6 +38,10 @@
         (eval-exp-auxo body env^ s^^ k^ out)
         )))
 
+  (define make-k
+    (lambda (k)
+      `(continuation ,k)))
+  
   (define apply-ko
     (lambda (k^ v/s out)
       (conde
@@ -56,8 +60,14 @@
            )]
         [(fresh (p k a s^^ dummy-v-out)
            (== (application-inner-k p k dummy-v-out) k^)
-           (== (answer a s^^) v/s)
-           (apply-proco p a s^^ k out)
+           (conde
+             [(fresh (x body env^)
+                (== (make-proc x body env^) p))
+              (== (answer a s^^) v/s)
+              (apply-proco p a s^^ k out)]
+             [(fresh (k^^)
+                (== (make-k k^^) p)
+                (apply-ko k^^ v/s out ))])
            )]
         [(fresh (rand env k p s^ dummy-v-out dummy-v-out^)
            (== (application-outer-k rand env k dummy-v-out) k^)
@@ -106,6 +116,7 @@
            (== (answer datum s) ans)
            (fresh ()
              (absento 'closure datum)
+             (absento 'continuation datum)
              (absento 'void datum))
            (not-in-envo 'quote env)
            (apply-ko k ans out))]
@@ -120,6 +131,12 @@
            (== (answer v s) ans)
            (lookupo exp env s v)
            (apply-ko k ans out))]
+        [(fresh (proc)
+         (== `(call/cc ,proc) exp)
+         (eval-exp-auxo `(,proc ,(make-k k)) env s k out))]
+        [(fresh (k^)
+           (== (make-k k^) exp)
+           (apply-ko k (answer exp s) out))]
         [(fresh (x e)
            (== `(set! ,x ,e) exp)
            (not-in-envo 'set! env)
@@ -155,6 +172,9 @@
 
   (define evalo
     (lambda (exp out)
-      (eval-expo exp empty-env empty-store empty-k out)))
+      (fresh ()
+        (absento 'continuation exp)
+        (absento 'continuation out)
+        (eval-expo exp empty-env empty-store empty-k out))))
 
   )

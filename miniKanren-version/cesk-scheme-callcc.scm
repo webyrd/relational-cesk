@@ -37,6 +37,10 @@
       (eval-exp-auxo body env^ s^^ k^ out v-out) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
       )))
 
+(define make-k
+  (lambda (k)
+    `(continuation ,k)))
+
 (define apply-ko
   (lambda (k^ v/s out)
     (conde
@@ -55,8 +59,14 @@
          )]
       [(fresh (p k a s^^ v-out^)
          (== (application-inner-k p k v-out^) k^)
-         (== (answer a s^^) v/s)
-         (apply-proco p a s^^ k out v-out^) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
+         (conde
+           [(fresh (x body env^)
+              (== (make-proc x body env^) p))
+            (== (answer a s^^) v/s)
+            (apply-proco p a s^^ k out v-out^)] ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
+           [(fresh (k^^)
+              (== (make-k k^^) p)
+              (apply-ko k^^ v/s out ))])
          )]
       [(fresh (rand env k p s^ v-out^ v-out-ignore)
          (== (application-outer-k rand env k v-out^) k^)
@@ -69,8 +79,11 @@
 ;;;
 ;;; This optimization results in different answer ordering. This makes
 ;;; testing trickier.         
-         (fresh (x body env^)
-           (== (make-proc x body env^) p))
+         (conde
+           [(fresh (x body env^)
+              (== (make-proc x body env^) p))]
+           [(fresh (k^)
+              (== (make-k k^) p))])
 
          (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
          )]
@@ -119,6 +132,7 @@
          (== (answer datum s) ans)
          (fresh ()
            (absento 'closure datum)
+           (absento 'continuation datum)
            (absento 'void datum))
          (not-in-envo 'quote env)
          (apply-ko k ans out))]
@@ -135,7 +149,13 @@
          (== v v-out) ; v-out
          (== (answer v s) ans)
          (apply-ko k ans out))]
-       [(fresh (x e v-out-ignore)
+      [(fresh (proc)
+         (== `(call/cc ,proc) exp)
+         (eval-exp-auxo `(,proc ,(make-k k)) env s k out v-out))]
+      [(fresh (k^)
+         (== (make-k k^) exp)
+         (apply-ko k (answer exp s) out))]
+      [(fresh (x e v-out-ignore)
          (== `(set! ,x ,e) exp)
          (not-in-envo 'set! env)
          (symbolo x)
@@ -161,7 +181,8 @@
          (apply-ko k ans out))]
       [(fresh (e ignore v-out v-out^ v-out-rest v-out-e)
          (== `(,e . ,ignore) e*)
-         (== `(,v-out-e . ,v-out-rest) v-out*) ; v-out*
+         ;;unsound with continuations within lists
+         ;;(== `(,v-out-e . ,v-out-rest) v-out*) ; v-out*
          (eval-exp-auxo e env s (list-aux-outer-k e* env k v-out-rest) out v-out-e))])))
 
 (define eval-expo
@@ -177,6 +198,9 @@
 
 (define evalo
   (lambda (exp out)
-    (eval-expo exp empty-env empty-store empty-k out)))
+    (fresh ()
+      (absento 'continuation exp)
+      (absento 'continuation out)
+      (eval-expo exp empty-env empty-store empty-k out))))
 
 )
