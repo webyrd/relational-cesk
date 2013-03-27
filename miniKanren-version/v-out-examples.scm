@@ -1045,6 +1045,8 @@
     (lambda (ls k)
       `(rember-else-k ,ls ,k)))
 
+  ;; NOTE: we're still not propagating v-out into the continuation.
+  ;;       first, find a divergent use case for that.
   (define apply-ko
     (lambda (k^ v out)
       (conde
