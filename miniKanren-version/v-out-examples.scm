@@ -126,13 +126,6 @@
       (fresh (rest-a rest-b)
         (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
     '())
-
-;;; this test diverges, even with the absento mojo
-;  (test "rembero-9"
-;    (run* (q)
-;      (fresh (rest-a rest-b)
-;        (rembero q `(x . ,rest-a) `(z . ,rest-b))))
-;    '())
   
   )
 
@@ -256,14 +249,6 @@
       (fresh (rest-a rest-b)
         (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
     '())
-
-;;; this test diverges, even with the absento mojo
-;  (test "rembero-9"
-;    (run* (q)
-;      (fresh (rest-a rest-b)
-;        (rembero q `(x . ,rest-a) `(z . ,rest-b))))
-;    '())
-
   
   )
 
@@ -453,13 +438,6 @@
 ;      (fresh (rest-a rest-b)
 ;        (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
 ;    '())
-
-;;; this test diverges, even with the absento mojo
-;  (test "rembero-9"
-;    (run* (q)
-;      (fresh (rest-a rest-b)
-;        (rembero q `(x . ,rest-a) `(z . ,rest-b))))
-;    '())
   
   )
 
@@ -606,13 +584,6 @@
       (fresh (rest-a rest-b)
         (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
     '())
-
-;;; this test diverges, even with the absento mojo
-;  (test "rembero-9"
-;    (run* (q)
-;      (fresh (rest-a rest-b)
-;        (rembero q `(x . ,rest-a) `(z . ,rest-b))))
-;    '())
   
   )
 
@@ -741,12 +712,5 @@
       (fresh (rest-a rest-b)
         (rembero 'y `(x . ,rest-a) `(z . ,rest-b))))
     '())
-
-;;; this test diverges, even with the absento mojo
-;  (test "rembero-9"
-;    (run* (q)
-;      (fresh (rest-a rest-b)
-;        (rembero q `(x . ,rest-a) `(z . ,rest-b))))
-;    '())
 
   )
