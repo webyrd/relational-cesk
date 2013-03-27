@@ -797,7 +797,7 @@
 
  #!eof
 
- ;;; comes back under full chez in about 60 seconds
+ ;;; comes back under full chez in about 48 seconds
  ;;; would probably be waiting at least 3x as long under petite, if it doesn't run out of memory.
  (test "thrine"
    (run 1 (x)
@@ -815,9 +815,20 @@
       (=/= ((_.0 closure)) ((_.0 list)) ((_.0 quote)) ((_.0 void)))
       (sym _.0))))
 
-;;; is there even such a quine?
+;;; took eight minutes to find this under full chez with optimize-level 3 on casper (with only set! added to the quines language, not call/cc)
  (test "quine-with-set!"
    (run 1 (q)
      (evalo q q)
      (fails-unless-contains q 'set!))
-  '???)
+   '((((lambda (_.0)
+         (list
+          _.0
+          (list ((lambda (_.1) 'quote) (set! _.0 _.0)) _.0)))
+       '(lambda (_.0)
+          (list
+           _.0
+           (list ((lambda (_.1) 'quote) (set! _.0 _.0)) _.0))))
+      (=/= ((_.0 closure)) ((_.0 lambda)) ((_.0 list)) ((_.0 quote))
+           ((_.0 set!)) ((_.0 void)) ((_.1 closure)) ((_.1 quote))
+           ((_.1 void)))
+      (sym _.0 _.1))))
