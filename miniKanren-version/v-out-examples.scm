@@ -718,13 +718,13 @@
 (let ()
 
   (define rember*
-    (lambda (x ls)
+    (lambda (x t)
       (cond
-        [(null? ls) '()]
-        [(list? (car ls)) (cons (rember* x (car ls)) (rember* x (cdr ls)))]
-        [(eq? (car ls) x) (rember* x (cdr ls))]
+        [(null? t) '()]
+        [(list? (car t)) (cons (rember* x (car t)) (rember* x (cdr t)))]
+        [(eq? (car t) x) (rember* x (cdr t))]
         [else
-          (cons (car ls) (rember* x (cdr ls)))])))
+          (cons (car t) (rember* x (cdr t)))])))
 
   (printf "*** vanilla direct-style Scheme rember*\n")
 
@@ -736,20 +736,20 @@
 (let ()
 
   (define rember*o
-    (lambda (x ls out)
+    (lambda (x t out)
       (conde
-        [(== '() ls) (== ls out)]
+        [(== '() t) (== t out)]
         [(fresh (a d ra rd a1 a*)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,ra . ,rd) out)
            (== `(,a1 . ,a*) a)
            (rember*o x a ra)
            (rember*o x d rd))]
         [(fresh (d)
-           (== `(,x . ,d) ls)
+           (== `(,x . ,d) t)
            (rember*o x d out))]
         [(fresh (a d rd)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,a . ,rd) out)
            (conde
              [(symbolo a)]
@@ -758,6 +758,10 @@
            (rember*o x d rd))])))
 
   (printf "*** vanilla direct-style rember*o\n")
+
+  (test "rember*o-paper-ex-1"
+    (run* (q) (rember*o 'a '((a) (a b) a c) q))
+    '((() (b) c)))
 
   (test "rember*o-1"
     (run* (q)
@@ -785,9 +789,9 @@
 
   (test "rember*o-4"
     (run 5 (q)
-      (fresh (x ls out)
-        (rember*o x ls out)
-        (== `(,x ,ls ,out) q)))
+      (fresh (x t out)
+        (rember*o x t out)
+        (== `(,x ,t ,out) q)))
     '((_.0 () ())
       (_.0 (_.0) ())
       ((_.0 (_.1) (_.1)) (=/= ((_.0 _.1))) (sym _.1))
@@ -833,22 +837,22 @@
 (let ()
 
   (define rember*-cps
-    (lambda (x ls k)
+    (lambda (x t k)
       (cond
-        [(null? ls) (k '())]
-        [(list? (car ls)) (rember*-cps x (car ls)
+        [(null? t) (k '())]
+        [(list? (car t)) (rember*-cps x (car t)
                             (lambda (ra)
-                              (rember*-cps x (cdr ls)
+                              (rember*-cps x (cdr t)
                                 (lambda (rd)
                                   (k (cons ra rd))))))]
-        [(eq? (car ls) x) (rember*-cps x (cdr ls) k)]
-        [else (rember*-cps x (cdr ls)
+        [(eq? (car t) x) (rember*-cps x (cdr t) k)]
+        [else (rember*-cps x (cdr t)
                 (lambda (rd)
-                  (k (cons (car ls) rd))))])))
+                  (k (cons (car t) rd))))])))
 
   (define rember*
-    (lambda (x ls)
-      (rember*-cps x ls (lambda (x) x))))
+    (lambda (x t)
+      (rember*-cps x t (lambda (x) x))))
 
   (printf "*** CPS Scheme rember* w/higher-order continuations\n")
 
@@ -862,16 +866,16 @@
   (define empty-k 'empty-k)
 
   (define rember-list-car-outer-k
-    (lambda (x ls k)
-      `(rember-list-car-outer-k ,x ,ls ,k)))
+    (lambda (x t k)
+      `(rember-list-car-outer-k ,x ,t ,k)))
 
   (define rember-list-car-inner-k
     (lambda (ra k)
       `(rember-list-car-inner-k ,ra ,k)))
 
   (define rember-else-k
-    (lambda (ls k)
-      `(rember-else-k ,ls ,k)))
+    (lambda (t k)
+      `(rember-else-k ,t ,k)))
 
   (define apply-k
     (lambda (k^ v)
@@ -879,29 +883,29 @@
         [(eq? empty-k k^) v]
         [(eq? (car k^) 'rember-list-car-outer-k)
          (let ([x (cadr k^)]
-               [ls (caddr k^)]
+               [t (caddr k^)]
                [k (cadddr k^)])
-           (rember*-cps x (cdr ls) (rember-list-car-inner-k v k)))]
+           (rember*-cps x (cdr t) (rember-list-car-inner-k v k)))]
         [(eq? (car k^) 'rember-list-car-inner-k)
          (let ([ra (cadr k^)]
                [k (caddr k^)])
            (apply-k k (cons ra v)))]
         [(eq? (car k^) 'rember-else-k)
-         (let ([ls (cadr k^)]
+         (let ([t (cadr k^)]
                [k (caddr k^)])
-           (apply-k k (cons (car ls) v)))])))
+           (apply-k k (cons (car t) v)))])))
 
   (define rember*-cps
-    (lambda (x ls k)
+    (lambda (x t k)
       (cond
-        [(null? ls) (apply-k k '())]
-        [(list? (car ls)) (rember*-cps x (car ls) (rember-list-car-outer-k x ls k))]
-        [(eq? (car ls) x) (rember*-cps x (cdr ls) k)]
-        [else (rember*-cps x (cdr ls) (rember-else-k ls k))])))
+        [(null? t) (apply-k k '())]
+        [(list? (car t)) (rember*-cps x (car t) (rember-list-car-outer-k x t k))]
+        [(eq? (car t) x) (rember*-cps x (cdr t) k)]
+        [else (rember*-cps x (cdr t) (rember-else-k t k))])))
 
   (define rember*
-    (lambda (x ls)
-      (rember*-cps x ls empty-k)))
+    (lambda (x t)
+      (rember*-cps x t empty-k)))
 
   (printf "*** CPS Scheme rember* w/data-structural continuations\n")
 
@@ -915,55 +919,55 @@
   (define empty-k 'empty-k)
 
   (define rember-list-car-outer-k
-    (lambda (x ls k)
-      `(rember-list-car-outer-k ,x ,ls ,k)))
+    (lambda (x t k)
+      `(rember-list-car-outer-k ,x ,t ,k)))
 
   (define rember-list-car-inner-k
     (lambda (ra k)
       `(rember-list-car-inner-k ,ra ,k)))
 
   (define rember-else-k
-    (lambda (ls k)
-      `(rember-else-k ,ls ,k)))
+    (lambda (t k)
+      `(rember-else-k ,t ,k)))
 
   (define apply-ko
     (lambda (k^ v out)
       (conde
         [(== empty-k k^) (== v out)]
-        [(fresh (x ls k a-ignore d)
-           (== (rember-list-car-outer-k x ls k) k^)
-           (== `(,a-ignore . ,d) ls)
+        [(fresh (x t k a-ignore d)
+           (== (rember-list-car-outer-k x t k) k^)
+           (== `(,a-ignore . ,d) t)
            (rember*-cpso x d (rember-list-car-inner-k v k) out))]
         [(fresh (ra k)
            (== (rember-list-car-inner-k ra k) k^)
            (apply-ko k `(,ra . ,v) out))]
-        [(fresh (ls k a d-ignore)
-           (== (rember-else-k ls k) k^)
-           (== `(,a . ,d-ignore) ls)
+        [(fresh (t k a d-ignore)
+           (== (rember-else-k t k) k^)
+           (== `(,a . ,d-ignore) t)
            (apply-ko k `(,a . ,v) out))])))
 
   (define rember*-cpso
-    (lambda (x ls k out)
+    (lambda (x t k out)
       (conde
-        [(== '() ls) (apply-ko k '() out)]
+        [(== '() t) (apply-ko k '() out)]
         [(fresh (a d-ignore a1 a*)
-           (== `(,a . ,d-ignore) ls)
+           (== `(,a . ,d-ignore) t)
            (== `(,a1 . ,a*) a)
-           (rember*-cpso x a (rember-list-car-outer-k x ls k) out))]
+           (rember*-cpso x a (rember-list-car-outer-k x t k) out))]
         [(fresh (d)
-           (== `(,x . ,d) ls)
+           (== `(,x . ,d) t)
            (rember*-cpso x d k out))]
         [(fresh (a d)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (conde
              [(symbolo a)]
              [(== '() a)])
            (=/= a x)
-           (rember*-cpso x d (rember-else-k ls k) out))])))
+           (rember*-cpso x d (rember-else-k t k) out))])))
 
   (define rember*o
-    (lambda (x ls out)
-      (rember*-cpso x ls empty-k out)))
+    (lambda (x t out)
+      (rember*-cpso x t empty-k out)))
 
   (printf "*** vanilla CPS rembero*\n")
 
@@ -982,8 +986,8 @@
       (rember*o q '(x y z y w y y v) '(x z w v)))
     '(y))
 
-  ;; diverges due to CPS!
-  (test-disable "rember*o-3"
+  ;; doesn't diverge, but really slow
+  (test "rember*o-3"
     (run 5 (q)
       (rember*o 'y q '(x z w v)))
     '((x z w v)
@@ -994,9 +998,9 @@
 
   (test "rember*o-4"
     (run 5 (q)
-      (fresh (x ls out)
-        (rember*o x ls out)
-        (== `(,x ,ls ,out) q)))
+      (fresh (x t out)
+        (rember*o x t out)
+        (== `(,x ,t ,out) q)))
     '((_.0 () ())
       (_.0 (_.0) ())
       (_.0 (_.0 _.0) ())
@@ -1046,16 +1050,16 @@
   (define empty-k 'empty-k)
 
   (define rember-list-car-outer-k
-    (lambda (x ls k)
-      `(rember-list-car-outer-k ,x ,ls ,k)))
+    (lambda (x t k)
+      `(rember-list-car-outer-k ,x ,t ,k)))
 
   (define rember-list-car-inner-k
     (lambda (ra k)
       `(rember-list-car-inner-k ,ra ,k)))
 
   (define rember-else-k
-    (lambda (ls k)
-      `(rember-else-k ,ls ,k)))
+    (lambda (t k)
+      `(rember-else-k ,t ,k)))
 
   ;; NOTE: we're still not propagating v-out into the continuation.
   ;;       hence, rembero-9 still diverges.
@@ -1063,58 +1067,58 @@
     (lambda (k^ v out)
       (conde
         [(== empty-k k^) (== v out)]
-        [(fresh (x ls k a-ignore d v-out-ignore)
-           (== (rember-list-car-outer-k x ls k) k^)
-           (== `(,a-ignore . ,d) ls)
+        [(fresh (x t k a-ignore d v-out-ignore)
+           (== (rember-list-car-outer-k x t k) k^)
+           (== `(,a-ignore . ,d) t)
            (rember*-cpso x d (rember-list-car-inner-k v k) out v-out-ignore))]
         [(fresh (ra k)
            (== (rember-list-car-inner-k ra k) k^)
            (apply-ko k `(,ra . ,v) out))]
-        [(fresh (ls k a d-ignore)
-           (== (rember-else-k ls k) k^)
-           (== `(,a . ,d-ignore) ls)
+        [(fresh (t k a d-ignore)
+           (== (rember-else-k t k) k^)
+           (== `(,a . ,d-ignore) t)
            (apply-ko k `(,a . ,v) out))])))
 
   (define rember*-cpso
-    (lambda (x ls k out v-out)
+    (lambda (x t k out v-out)
       (conde
-        [(== '() ls) (== '() v-out) (apply-ko k '() out)]
+        [(== '() t) (== '() v-out) (apply-ko k '() out)]
         [(fresh (a d-ignore a1 a* v-out-ignore)
-           (== `(,a . ,d-ignore) ls)
+           (== `(,a . ,d-ignore) t)
            (== `(,a1 . ,a*) a)
-           (rember*-cpso x a (rember-list-car-outer-k x ls k) out v-out-ignore))]
+           (rember*-cpso x a (rember-list-car-outer-k x t k) out v-out-ignore))]
         [(fresh (d)
-           (== `(,x . ,d) ls)
+           (== `(,x . ,d) t)
            (rember*-cpso x d k out v-out))]
         [(fresh (a d v-out-d)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,a . ,v-out-d) v-out)
            (conde
              [(symbolo a)]
              [(== '() a)])
            (=/= a x)
-           (rember*-cpso x d (rember-else-k ls k) out v-out-d))])))
+           (rember*-cpso x d (rember-else-k t k) out v-out-d))])))
 
   (define rember*o
-    (lambda (x ls out)
-      (rember*-cpso x ls empty-k out out)))
+    (lambda (x t out)
+      (rember*-cpso x t empty-k out out)))
 
 ;;; direct style rember*o, just for testing
   (define direct-rember*o
-    (lambda (x ls out)
+    (lambda (x t out)
       (conde
-        [(== '() ls) (== ls out)]
+        [(== '() t) (== t out)]
         [(fresh (a d ra rd a1 a*)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,ra . ,rd) out)
            (== `(,a1 . ,a*) a)
            (direct-rember*o x a ra)
            (direct-rember*o x d rd))]
         [(fresh (d)
-           (== `(,x . ,d) ls)
+           (== `(,x . ,d) t)
            (direct-rember*o x d out))]
         [(fresh (a d rd)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,a . ,rd) out)
            (conde
              [(symbolo a)]
@@ -1151,9 +1155,9 @@
 
   (test "rember*o-4"
     (run 5 (q)
-      (fresh (x ls out)
-        (rember*o x ls out)
-        (== `(,x ,ls ,out) q)))
+      (fresh (x t out)
+        (rember*o x t out)
+        (== `(,x ,t ,out) q)))
     '((_.0 () ())
       (_.0 (_.0) ())
       (_.0 (_.0 _.0) ())
@@ -1168,22 +1172,22 @@
    (test "rember*o-b"
    (length
     (run 1000 (q)
-      (fresh (x ls out)
-        (== `(,x ,ls ,out) q)
-        (direct-rember*o x ls out)
+      (fresh (x t out)
+        (== `(,x ,t ,out) q)
+        (direct-rember*o x t out)
         (condu
-          [(rember*o x ls out)]
+          [(rember*o x t out)]
           [(errorg 'rember*o-b "rember*o can't handle state generated by direct-rembero:\n\n~s\n\n" q)]))))
    1000)
 
  (test "rember*o-c"
    (length
     (run 1000 (q)
-      (fresh (x ls out)
-        (== `(,x ,ls ,out) q)
-        (rember*o x ls out)
+      (fresh (x t out)
+        (== `(,x ,t ,out) q)
+        (rember*o x t out)
         (condu
-          [(direct-rember*o x ls out)]
+          [(direct-rember*o x t out)]
           [(errorg 'rember*o-c "direct-rember*o can't handle state generated by rembero:\n\n~s\n\n" q)]))))
    1000)
 
@@ -1224,74 +1228,74 @@
   (define empty-k 'empty-k)
 
   (define rember-list-car-outer-k
-    (lambda (x ls k v-out-d)
-      `(rember-list-car-outer-k ,x ,ls ,k ,v-out-d)))
+    (lambda (x t k v-out-d)
+      `(rember-list-car-outer-k ,x ,t ,k ,v-out-d)))
 
   (define rember-list-car-inner-k
     (lambda (ra k)
       `(rember-list-car-inner-k ,ra ,k)))
 
   (define rember-else-k
-    (lambda (ls k)
-      `(rember-else-k ,ls ,k)))
+    (lambda (t k)
+      `(rember-else-k ,t ,k)))
 
   (define apply-ko
     (lambda (k^ v out)
       (conde
         [(== empty-k k^) (== v out)]
-        [(fresh (x ls k a-ignore d v-out-d)
-           (== (rember-list-car-outer-k x ls k v-out-d) k^)
-           (== `(,a-ignore . ,d) ls)
+        [(fresh (x t k a-ignore d v-out-d)
+           (== (rember-list-car-outer-k x t k v-out-d) k^)
+           (== `(,a-ignore . ,d) t)
            (rember*-cpso x d (rember-list-car-inner-k v k) out v-out-d))]
         [(fresh (ra k)
            (== (rember-list-car-inner-k ra k) k^)
            (apply-ko k `(,ra . ,v) out))]
-        [(fresh (ls k a d-ignore)
-           (== (rember-else-k ls k) k^)
-           (== `(,a . ,d-ignore) ls)
+        [(fresh (t k a d-ignore)
+           (== (rember-else-k t k) k^)
+           (== `(,a . ,d-ignore) t)
            (apply-ko k `(,a . ,v) out))])))
 
   (define rember*-cpso
-    (lambda (x ls k out v-out)
+    (lambda (x t k out v-out)
       (conde
-        [(== '() ls) (== '() v-out) (apply-ko k '() out)]
+        [(== '() t) (== '() v-out) (apply-ko k '() out)]
         [(fresh (a d-ignore a1 a* v-out-a v-out-d)
-           (== `(,a . ,d-ignore) ls)
+           (== `(,a . ,d-ignore) t)
            (== `(,a1 . ,a*) a)
            (== `(,v-out-a . ,v-out-d) v-out)
-           (rember*-cpso x a (rember-list-car-outer-k x ls k v-out-d) out v-out-a))]
+           (rember*-cpso x a (rember-list-car-outer-k x t k v-out-d) out v-out-a))]
         [(fresh (d)
-           (== `(,x . ,d) ls)
+           (== `(,x . ,d) t)
            (rember*-cpso x d k out v-out))]
         [(fresh (a d v-out-d)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,a . ,v-out-d) v-out)
            (conde
              [(symbolo a)]
              [(== '() a)])
            (=/= a x)
-           (rember*-cpso x d (rember-else-k ls k) out v-out-d))])))
+           (rember*-cpso x d (rember-else-k t k) out v-out-d))])))
 
   (define rember*o
-    (lambda (x ls out)
-      (rember*-cpso x ls empty-k out out)))
+    (lambda (x t out)
+      (rember*-cpso x t empty-k out out)))
 
 ;;; direct style rember*o, just for testing
   (define direct-rember*o
-    (lambda (x ls out)
+    (lambda (x t out)
       (conde
-        [(== '() ls) (== ls out)]
+        [(== '() t) (== t out)]
         [(fresh (a d ra rd a1 a*)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,ra . ,rd) out)
            (== `(,a1 . ,a*) a)
            (direct-rember*o x a ra)
            (direct-rember*o x d rd))]
         [(fresh (d)
-           (== `(,x . ,d) ls)
+           (== `(,x . ,d) t)
            (direct-rember*o x d out))]
         [(fresh (a d rd)
-           (== `(,a . ,d) ls)
+           (== `(,a . ,d) t)
            (== `(,a . ,rd) out)
            (conde
              [(symbolo a)]
@@ -1328,9 +1332,9 @@
 
   (test "rember*o-4"
     (run 5 (q)
-      (fresh (x ls out)
-        (rember*o x ls out)
-        (== `(,x ,ls ,out) q)))
+      (fresh (x t out)
+        (rember*o x t out)
+        (== `(,x ,t ,out) q)))
     '((_.0 () ())
       (_.0 (_.0) ())
       (_.0 (_.0 _.0) ())
@@ -1345,22 +1349,22 @@
    (test "rember*o-b"
    (length
     (run 1000 (q)
-      (fresh (x ls out)
-        (== `(,x ,ls ,out) q)
-        (direct-rember*o x ls out)
+      (fresh (x t out)
+        (== `(,x ,t ,out) q)
+        (direct-rember*o x t out)
         (condu
-          [(rember*o x ls out)]
+          [(rember*o x t out)]
           [(errorg 'rember*o-b "rember*o can't handle state generated by direct-rembero:\n\n~s\n\n" q)]))))
    1000)
 
  (test "rember*o-c"
    (length
     (run 1000 (q)
-      (fresh (x ls out)
-        (== `(,x ,ls ,out) q)
-        (rember*o x ls out)
+      (fresh (x t out)
+        (== `(,x ,t ,out) q)
+        (rember*o x t out)
         (condu
-          [(direct-rember*o x ls out)]
+          [(direct-rember*o x t out)]
           [(errorg 'rember*o-c "direct-rember*o can't handle state generated by rembero:\n\n~s\n\n" q)]))))
    1000)
 
