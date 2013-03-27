@@ -823,6 +823,11 @@
         (rember*o 'y `(x . ,rest-a) `(z . ,rest-b))))
     '())
 
+  (test "rembero-9"
+    (run* (q)
+      (fresh (rest-a rest-b)
+        (rember*o 'y `((x) . ,rest-a) `((z) . ,rest-b))))
+    '())
   )
 
 (let ()
@@ -1027,6 +1032,13 @@
       (fresh (rest-a rest-b)
         (rember*o 'y `(x . ,rest-a) `(z . ,rest-b))))
     '())
+
+;;; diverges due to CPS
+  (test-disable "rembero-9"
+    (run* (q)
+      (fresh (rest-a rest-b)
+        (rember*o 'y `((x) . ,rest-a) `((z) . ,rest-b))))
+    '())
   )
 
 (let ()
@@ -1046,7 +1058,7 @@
       `(rember-else-k ,ls ,k)))
 
   ;; NOTE: we're still not propagating v-out into the continuation.
-  ;;       first, find a divergent use case for that.
+  ;;       hence, rembero-9 still diverges.
   (define apply-ko
     (lambda (k^ v out)
       (conde
@@ -1198,5 +1210,11 @@
     (run* (q)
       (fresh (rest-a rest-b)
         (rember*o 'y `(x . ,rest-a) `(z . ,rest-b))))
+    '())
+;;; diverges due to CPS
+  (test-disable "rembero-9"
+    (run* (q)
+      (fresh (rest-a rest-b)
+        (rember*o 'y `((x) . ,rest-a) `((z) . ,rest-b))))
     '())
   )
