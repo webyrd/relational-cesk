@@ -55,19 +55,19 @@
       ((+ ,e1 ,e2)
        (eval-exp e1 env s
          (lambda (v1/s^)
-           (let ((v1 (car v1/s^)) (s^ (car v1/s^)))
+           (let ((v1 (car v1/s^)) (s^ (cdr v1/s^)))
              (eval-exp e2 env s^
                (lambda (v2/s^^)
-                 (let ((v2 (car v2/s^^)) (s^^ (car v2/s^^)))
-                   (k (+ v1 v2)))))))))      
+                 (let ((v2 (car v2/s^^)) (s^^ (cdr v2/s^^)))
+                   (k (answer (+ v1 v2) s^^)))))))))
       ((* ,e1 ,e2)
        (eval-exp e1 env s
          (lambda (v1/s^)
-           (let ((v1 (car v1/s^)) (s^ (car v1/s^)))
+           (let ((v1 (car v1/s^)) (s^ (cdr v1/s^)))
              (eval-exp e2 env s^
                (lambda (v2/s^^)
-                 (let ((v2 (car v2/s^^)) (s^^ (car v2/s^^)))
-                   (k (* v1 v2)))))))))
+                 (let ((v2 (car v2/s^^)) (s^^ (cdr v2/s^^)))
+                   (k (answer (* v1 v2) s^^)))))))))
       ((set! ,x ,rhs)
        (eval-exp rhs env s
          (lambda (v/s^)
@@ -79,7 +79,7 @@
        (eval-exp e env s
          (lambda (p/s^)
            (let ((p (car p/s^)) (s^ (cdr p/s^)))             
-             (p (lambda (a s^^ k^) (k (answer a s^^))) s^ k)))))      
+             (p (lambda (a s^^ k^) (k (answer a s^^))) s^ k)))))
       ((begin ,rand1 ,rand2)
        (eval-exp rand1 env s
          (lambda (v1/s^)
@@ -183,8 +183,8 @@
                   (* 5 (k 4))))))
 
 (test "call/cc-7"
-(eval-exp '(((call/cc (lambda (k) k)) (lambda (x) x)) (quote "HEY!"))
+(eval-exp '(((call/cc (lambda (k) k)) (lambda (x) x)) 1)
             empty-env
             empty-s
             empty-k)  
-  (((call/cc (lambda (k) k)) (lambda (x) x)) (quote "HEY!")))
+  (((call/cc (lambda (k) k)) (lambda (x) x)) 1))
