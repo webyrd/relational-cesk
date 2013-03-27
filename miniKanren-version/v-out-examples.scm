@@ -759,6 +759,10 @@
 
   (printf "*** vanilla direct-style rember*o\n")
 
+  (test "rember*o-paper-ex-1"
+    (run* (q) (rember*o 'a '((a) (a b) a c) q))
+    '((() (b) c)))
+
   (test "rember*o-1"
     (run* (q)
       (rember*o 'y '((x) (y) z y (w y y) v) q))
@@ -982,8 +986,8 @@
       (rember*o q '(x y z y w y y v) '(x z w v)))
     '(y))
 
-  ;; diverges due to CPS!
-  (test-disable "rember*o-3"
+  ;; doesn't diverge, but really slow
+  (test "rember*o-3"
     (run 5 (q)
       (rember*o 'y q '(x z w v)))
     '((x z w v)
