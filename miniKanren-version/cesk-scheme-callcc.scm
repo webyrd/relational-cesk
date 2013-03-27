@@ -79,11 +79,11 @@
 ;;;
 ;;; This optimization results in different answer ordering. This makes
 ;;; testing trickier.         
-         (conde
-           [(fresh (x body env^)
-              (== (make-proc x body env^) p))]
-           [(fresh (k^)
-              (== (make-k k^) p))])
+         ;; (conde
+         ;;   [(fresh (x body env^)
+         ;;      (== (make-proc x body env^) p))]
+         ;;   [(fresh (k^)
+         ;;      (== (make-k k^) p))])
 
          (eval-exp-auxo rand env s^ (application-inner-k p k v-out^) out v-out-ignore) ; v-out (this use is essential--passing a fresh variable breaks ability to generate quines in a reasonable time)
          )]
@@ -151,7 +151,8 @@
          (apply-ko k ans out))]
       [(fresh (proc)
          (== `(call/cc ,proc) exp)
-         (eval-exp-auxo `(,proc ,(make-k k)) env s k out v-out))]
+         (fresh (v-out-ignore)
+           (eval-exp-auxo `(,proc ,(make-k k)) env s k out v-out-ignore)))]
       [(fresh (k^)
          (== (make-k k^) exp)
          (apply-ko k (answer exp s) out))]
@@ -181,8 +182,7 @@
          (apply-ko k ans out))]
       [(fresh (e ignore v-out v-out^ v-out-rest v-out-e)
          (== `(,e . ,ignore) e*)
-         ;;unsound with continuations within lists
-         ;;(== `(,v-out-e . ,v-out-rest) v-out*) ; v-out*
+         (== `(,v-out-e . ,v-out-rest) v-out*) ; v-out*
          (eval-exp-auxo e env s (list-aux-outer-k e* env k v-out-rest) out v-out-e))])))
 
 (define eval-expo
