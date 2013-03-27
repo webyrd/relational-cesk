@@ -183,3 +183,39 @@
     '(x z w v))
 
   )
+
+(let ()
+
+  (define empty-k 'empty-k)
+
+  (define rember-k
+    (lambda (ls k)
+      `(rember-k ,ls ,k)))
+  
+  (define apply-k
+    (lambda (k^ v)
+      (cond
+        [(eq? empty-k k^) v]
+        [(eq? (car k^) 'rember-k)
+         (let ([ls (cadr k^)]
+               [k (caddr k^)])
+           (apply-k k (cons (car ls) v)))])))
+
+  (define rember-cps
+    (lambda (x ls k)
+      (cond
+        [(null? ls) (apply-k k '())]
+        [(eq? x (car ls)) (rember-cps x (cdr ls) k)]
+        [else (rember-cps x (cdr ls) (rember-k ls k))])))
+
+  (define rember
+    (lambda (x ls)
+      (rember-cps x ls empty-k)))
+  
+  (printf "*** CPS Scheme remember w/data-structural continuations\n")
+  
+  (test "rember-1"
+    (rember 'y '(x y z y w y y v))
+    '(x z w v))
+
+  )
