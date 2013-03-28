@@ -44,6 +44,10 @@
   (lambda (x body env)
     `(closure ,x ,body ,env)))
 
+(define make-continuation
+  (lambda (k)
+    `(continuation ,k)))
+
 (define apply-proc
   (lambda (p a s^ k^)
     (dmatch p
@@ -54,11 +58,6 @@
              (eval-exp-aux body env^ s^^ k^)))))
       ((continuation ,k)
        (apply-k k (answer a s^))))))
-
-
-(define make-continuation
-  (lambda (k)
-    `(continuation ,k)))
 
 
 (define apply-k
