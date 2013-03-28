@@ -59,14 +59,23 @@
        (let ((loc (new-loc s^)))
          (let ((env^ (ext-env x loc env)))
            (let ((s^^ (ext-s loc a s^)))
-             (eval-exp-aux body env^ s^^ k^))))])))
+             (eval-exp-aux body env^ s^^ k^))))]
+      [(continuation ,k)
+       (apply-k k (answer a s^))])))
 
+
+(define make-continuation
+  (lambda (k)
+    `(continuation ,k)))
 
 
 (define apply-k
   (lambda (k v/s)
     (pmatch k
       [(empty-k) v/s]
+      [(call/cc-k ,k)
+       (let ((p (car v/s)) (s^ (cdr v/s)))
+         (apply-proc p (make-continuation k) s^ k))]
       [(throw-k ,v-e ,env^)
        (let ((cc (car v/s))
              (s (cdr v/s)))
@@ -93,6 +102,15 @@
        (let ((v (car v/s))
              (s (cdr v/s)))
          (eval-exp-aux e2 env s (subtraction-inner-k v k)))]
+      [(addition-inner-k ,v1 ,k)
+       (let ((v2 (car v/s))
+             (s^^ (cdr v/s)))
+         (apply-k k (answer (+ v1 v2) s^^)))]
+      [(addition-outer-k ,e2 ,env ,k)
+       (let ((v1 (car v/s))
+             (s^ (cdr v/s)))
+         (eval-exp-aux e2 env s^
+                   (addition-inner-k v1 k)))]      
       [(multiplication-inner-k ,v1 ,k)
        (let ((v2 (car v/s))
              (s^^ (cdr v/s)))
@@ -157,9 +175,21 @@
   (lambda (e2 env k)
     `(subtraction-outer-k ,e2 ,env ,k)))
 
+(define call/cc-k
+  (lambda (k)
+    `(call/cc-k ,k)))
+
 (define throw-k
   (lambda (v-e env)
     `(throw-k ,v-e ,env)))
+
+(define addition-inner-k
+  (lambda (v1 k)
+    `(addition-inner-k ,v1 ,k)))
+
+(define addition-outer-k
+  (lambda (e2 env k)
+    `(addition-outer-k ,e2 ,env ,k)))
 
 (define multiplication-inner-k
   (lambda (v1 k)
@@ -219,8 +249,12 @@
        (eval-exp-aux e env s (sub1-k k)))
       ((- ,e1 ,e2) (guard (not-in-env '- env))
        (eval-exp-aux e1 env s (subtraction-outer-k e2 env k)))
+      ((+ ,e1 ,e2) (guard (not-in-env '+ env))
+       (eval-exp-aux e1 env s (addition-outer-k e2 env k)))
       ((* ,e1 ,e2) (guard (not-in-env '* env))
-       (eval-exp-aux e1 env s (multiplication-outer-k e2 env k)))      
+       (eval-exp-aux e1 env s (multiplication-outer-k e2 env k)))
+      ((call/cc ,e)
+       (eval-exp-aux e env s (call/cc-k k)))
       ((throw ,cc-e ,v-e)
        (eval-exp-aux cc-e env s (throw-k v-e env)))
       ((letcc ,cc ,body)
@@ -408,6 +442,13 @@
             empty-k)
   '3)
 
+(test "cesk-addition"
+  (eval-exp '(+ ((lambda (x) x) 7) ((lambda (x) x) 4))
+            empty-env
+            empty-s
+            empty-k)
+  '11)
+
 (test "cesk-multiplication"
   (eval-exp '(* ((lambda (x) x) 7) ((lambda (x) x) 4))
             empty-env
@@ -514,6 +555,65 @@
             empty-s
             empty-k)
   '(bar bar bar))
+
+
+
+(test "call/cc-1"
+  (eval-exp '(call/cc (lambda (k) 20))
+            empty-env
+            empty-s
+            empty-k)
+  20)
+
+(test "call/cc-2"
+  (eval-exp '(call/cc (lambda (k) (k 20)))
+            empty-env
+            empty-s
+            empty-k)
+  20)
+
+(test "call/cc-3"
+  (eval-exp '(call/cc (lambda (k)
+                        (* 5 4)))
+            empty-env
+            empty-s
+            empty-k)
+  (call/cc (lambda (k)
+             (* 5 4))))
+
+(test "call/cc-4"
+  (eval-exp '(call/cc (lambda (k)
+                        (k (* 5 4))))
+            empty-env
+            empty-s
+            empty-k)  
+  (call/cc (lambda (k)
+             (k (* 5 4)))))
+
+(test "call/cc-5"
+  (eval-exp '(call/cc (lambda (k)
+                        (* 5 (k 4))))
+            empty-env
+            empty-s
+            empty-k)  
+  (call/cc (lambda (k)
+             (* 5 (k 4)))))
+
+(test "call/cc-6"
+(eval-exp '(+ 2 (call/cc (lambda (k)
+                           (* 5 (k 4)))))
+            empty-env
+            empty-s
+            empty-k)  
+  (+ 2 (call/cc (lambda (k)
+                  (* 5 (k 4))))))
+
+(test "call/cc-7"
+(eval-exp '(((call/cc (lambda (k) k)) (lambda (x) x)) 1)
+            empty-env
+            empty-s
+            empty-k)  
+  (((call/cc (lambda (k) k)) (lambda (x) x)) 1))
 
 (define quinec 
   '((lambda (x)
