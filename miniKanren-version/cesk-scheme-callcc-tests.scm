@@ -6,6 +6,118 @@
         (cesk-scheme-callcc)
         (rename (cesk-scheme-callcc-simple-dummy-v-out) (evalo evalo-simple) (eval-expo eval-expo-simple) (empty-env empty-env-simple) (empty-store empty-store-simple) (empty-k empty-k-simple)))
 
+(define k-without-v-outo
+  (lambda (k kout)
+    (conde
+      [(== '(empty-k) k) (== k kout)]
+      [(fresh (p^ k^ kout^ v-out^)
+         (== `(application-inner-k ,p^ ,k^ ,v-out^) k)
+         (== `(application-inner-k ,p^ ,kout^) kout)
+         (k-without-v-outo k^ kout^))]
+      [(fresh (rand^ env^ k^ kout^ v-out^)
+         (== `(application-outer-k ,rand^ ,env^ ,k^ ,v-out^) k)
+         (== `(application-outer-k ,rand^ ,env^ ,kout^) kout)
+         (k-without-v-outo k^ kout^))]
+      [(fresh (v^ k^ kout^)
+         (== `(list-aux-inner-k ,v^ ,k^) k)
+         (== `(list-aux-inner-k ,v^ ,kout^) kout)
+         (k-without-v-outo k^ kout^))]
+      [(fresh (e*^ env^ k^ kout^ v-out^)
+         (== `(list-aux-outer-k ,e*^ ,env^ ,k^ ,v-out^) k)
+         (== `(list-aux-outer-k ,e*^ ,env^ ,kout^) kout)
+         (k-without-v-outo k^ kout^))]
+      [(fresh (x^ env^ k^ kout^)
+         (== `(set!-k ,x^ ,env^ ,k^) k)
+         (== `(set!-k ,x^ ,env^ ,kout^) kout)
+         (k-without-v-outo k^ kout^))])))
+
+(test "paper-cont-gen-hello-1"
+  (run 1 (q)
+    (fresh (k expr val)
+      (absento 'hello expr)
+      (== val '(hello world))
+      (eval-expo expr empty-env empty-store k val)
+      (== q `(,expr ,k))))
+  '(('(world) (list-aux-inner-k hello (empty-k)))))
+
+(test "paper-cont-gen-hello-2"
+  (run 2 (q)
+    (fresh (k expr val k-rest)
+      (absento 'hello expr)
+      (== val '(hello world))
+      (== k `(application-outer-k . ,k-rest))
+      (eval-expo expr empty-env empty-store k val)
+      (== q `(,expr ,k))))
+  '((((continuation (empty-k))
+    (application-outer-k '(hello world) (_.0 _.1) _.2 _.3))
+   (absento '_.0))
+  (((lambda (_.0) _.0)
+     (application-outer-k
+       '(hello world)
+       (_.1 _.2)
+       (empty-k)
+       (hello world)))
+    (=/= ((_.0 hello)))
+    (sym _.0)
+    (absento '_.1))))
+
+(test "paper-cont-gen-hello-3"
+  (run 1 (q)
+    (fresh (k expr val k-rest)
+      (== expr `(lambda (x) (list x (quote world))))
+      (== val '(hello world))
+      (== k `(application-outer-k . ,k-rest))
+      (eval-expo expr empty-env empty-store k val)
+      (== q k)))
+  '(((application-outer-k 'hello (_.0 _.1) (empty-k) (hello world))
+      (absento '_.0))))
+
+(test "paper-cont-gen-hello-4"
+  (run 1 (q)
+    (fresh (k kout expr val k-rest lambda-rest)
+      (absento 'hello expr)
+      (k-without-v-outo k kout)
+      (absento 'world kout)
+      (absento 'list-aux-inner-k kout)
+      (== expr `(lambda . ,lambda-rest))
+      (== val '(hello world))
+      (== k `(application-outer-k 'hello . ,k-rest))
+      (eval-expo expr empty-env empty-store k val)
+      (== q expr)))
+  '(((lambda (_.0) (list _.0 'world))
+     (=/= ((_.0 hello)) ((_.0 list)) ((_.0 quote)))
+      (sym _.0))))
+
+(test "paper-cont-gen-hello-5"
+  (run 1 (q)
+    (fresh (k expr val k-env k-v-out)
+      (absento 'hello expr)
+      (== val '(hello world))
+      (== k `(application-outer-k 'hello ,k-env (empty-k) ,k-v-out))
+      (eval-expo expr empty-env empty-store k val)
+      (== q expr)))
+  '(((lambda (_.0) (list _.0 'world))
+     (=/= ((_.0 hello)) ((_.0 list)) ((_.0 quote)))
+      (sym _.0))))
+
+(test "paper-cont-gen-hello-6"
+  (run 1 (q)
+    (fresh (k expr val k-rest)
+      (absento 'hello expr)
+      (== val '(hello world))
+      (== k `(application-outer-k 'hello . ,k-rest))
+      (eval-expo expr empty-env empty-store k val)
+      (== q `(,expr ,k))))
+  '((((lambda (_.0) '(world))
+    (application-outer-k
+      'hello
+      (_.1 _.2)
+      (list-aux-inner-k hello (empty-k))
+      (world)))
+      (=/= ((_.0 hello)) ((_.0 quote)))
+      (sym _.0)
+      (absento '_.1))))
+
  (test "cesk-call/cc-1b"
    (length
     (run 50 (q)
