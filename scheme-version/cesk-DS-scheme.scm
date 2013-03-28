@@ -47,13 +47,13 @@
 (define apply-proc
   (lambda (p a s^ k^)
     (dmatch p
-      [(closure ,x ,body ,env)
+      ((closure ,x ,body ,env)
        (let ((loc (new-loc s^)))
          (let ((env^ (ext-env x loc env)))
            (let ((s^^ (ext-s loc a s^)))
-             (eval-exp-aux body env^ s^^ k^))))]
-      [(continuation ,k)
-       (apply-k k (answer a s^))])))
+             (eval-exp-aux body env^ s^^ k^)))))
+      ((continuation ,k)
+       (apply-k k (answer a s^))))))
 
 
 (define make-continuation
@@ -64,31 +64,31 @@
 (define apply-k
   (lambda (k v/s)
     (dmatch k
-      [(empty-k) v/s]
-      [(call/cc-k ,k)
+      ((empty-k) v/s)
+      ((call/cc-k ,k)
        (let ((p (car v/s)) (s^ (cdr v/s)))
-         (apply-proc p (make-continuation k) s^ k))]
-      [(set!-k ,x ,env ,k)
+         (apply-proc p (make-continuation k) s^ k)))
+      ((set!-k ,x ,env ,k)
        (let ((v (car v/s))
              (s^ (cdr v/s)))
          (let ((loc (apply-env env x)))
-           (apply-k k (answer (void) (ext-s loc v s^)))))]
-      [(application-inner-k ,p ,k)
+           (apply-k k (answer (void) (ext-s loc v s^))))))
+      ((application-inner-k ,p ,k)
        (let ((a (car v/s))
              (s^^ (cdr v/s)))
-         (apply-proc p a s^^ k))]
-      [(application-outer-k ,rand ,env ,k)
+         (apply-proc p a s^^ k)))
+      ((application-outer-k ,rand ,env ,k)
        (let ((p (car v/s))
              (s^ (cdr v/s)))
-         (eval-exp-aux rand env s^ (application-inner-k p k)))]
-      [(list-aux-inner-k ,loc ,k)
+         (eval-exp-aux rand env s^ (application-inner-k p k))))
+      ((list-aux-inner-k ,loc ,k)
        (let ((loc* (car v/s))
              (s^^ (cdr v/s)))
-         (apply-k k (answer (cons loc loc*) s^^)))]
-      [(list-aux-outer-k ,e* ,env ,k)
+         (apply-k k (answer (cons loc loc*) s^^))))
+      ((list-aux-outer-k ,e* ,env ,k)
        (let ((v (car v/s))
              (s^ (cdr v/s)))
-         (list-aux (cdr e*) env s^ (list-aux-inner-k v k)))])))
+         (list-aux (cdr e*) env s^ (list-aux-inner-k v k)))))))
 
 (define empty-k '(empty-k))
 
@@ -143,10 +143,10 @@
 (define list-aux
   (lambda (e* env s k)
     (dmatch e*
-      [() (apply-k k (answer '() s))]         
-      [(,a . ,d)
+      (() (apply-k k (answer '() s)))         
+      ((,a . ,d)
        (eval-exp-aux a env s
-                     (list-aux-outer-k e* env k))])))
+                     (list-aux-outer-k e* env k))))))
 
 (test "lookup"
   (let ((env (ext-env 'a (new-loc empty-s) empty-env))
