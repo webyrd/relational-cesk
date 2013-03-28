@@ -971,6 +971,11 @@
 
   (printf "*** vanilla CPS rembero*\n")
 
+  (test "rember*-cpso-1"
+    (run* (q)
+      (rember*-cpso 'a '(c a) (rember-else-k '(b c a) empty-k) q))
+    '((b c)))
+
   (test "rember*o-1"
     (run* (q)
       (rember*o 'y '((x) (y) z y (w y y) v) q))
@@ -1304,6 +1309,24 @@
            (direct-rember*o x d rd))])))
 
   (printf "*** direct-style rember*o with full v-out\n")
+
+  (test "rember*-cpso-1"
+    (run* (q)
+      (rember*-cpso 'a '(c a) (rember-else-k '(b c a) empty-k) q q))
+    '())
+
+  (test "rember*-cpso-2"
+    (run* (q)
+      (fresh (v-out)
+        (rember*-cpso 'a '(c a) (rember-else-k '(b c a) empty-k) q v-out)))
+    '((b c)))
+
+    (test "rember*-cpso-3"
+      (run* (q)
+        (fresh (out v-out)
+          (rember*-cpso 'a '(c a) (rember-else-k '(b c a) empty-k) out v-out)
+          (== q `(,out ,v-out))))
+      '(((b c) (c))))
 
   (test "rember*o-1"
     (run* (q)
