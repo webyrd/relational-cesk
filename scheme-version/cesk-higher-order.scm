@@ -111,6 +111,10 @@
   (eval-exp '5 empty-env empty-s empty-k)
   5)
 
+(test "cesk-arithmetic"
+  (eval-exp '(* (+ 3 4) (* (+ 7 8) 6)) empty-env empty-s empty-k)
+  (* (+ 3 4) (* (+ 7 8) 6)))
+
 (test "cesk-variable"
   (eval-exp 'a
             (ext-env 'a (new-loc empty-s) empty-env)
