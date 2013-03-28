@@ -142,11 +142,11 @@
 
 (define list-aux
   (lambda (e* env s k)
-    (cond
-      [(null? e*) (apply-k k (answer '() s))]         
-      [else
-       (eval-exp-aux (car e*) env s
-                 (list-aux-outer-k e* env k))])))
+    (dmatch e*
+      [() (apply-k k (answer '() s))]         
+      [(,a . ,d)
+       (eval-exp-aux a env s
+                     (list-aux-outer-k e* env k))])))
 
 (test "lookup"
   (let ((env (ext-env 'a (new-loc empty-s) empty-env))
