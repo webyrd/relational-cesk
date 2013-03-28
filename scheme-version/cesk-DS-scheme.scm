@@ -1,4 +1,4 @@
-(load "pmatch.scm")
+(load "dmatch.scm")
 (load "test-check.scm")
 
 (define answer cons)
@@ -46,7 +46,7 @@
 
 (define apply-proc
   (lambda (p a s^ k^)
-    (pmatch p
+    (dmatch p
       [(closure ,x ,body ,env)
        (let ((loc (new-loc s^)))
          (let ((env^ (ext-env x loc env)))
@@ -63,7 +63,7 @@
 
 (define apply-k
   (lambda (k v/s)
-    (pmatch k
+    (dmatch k
       [(empty-k) v/s]
       [(call/cc-k ,k)
        (let ((p (car v/s)) (s^ (cdr v/s)))
@@ -88,8 +88,7 @@
       [(list-aux-outer-k ,e* ,env ,k)
        (let ((v (car v/s))
              (s^ (cdr v/s)))
-         (list-aux (cdr e*) env s^ (list-aux-inner-k v k)))]
-      [,else (error 'apply-k "unknown continuation type")])))
+         (list-aux (cdr e*) env s^ (list-aux-inner-k v k)))])))
 
 (define empty-k '(empty-k))
 
@@ -119,21 +118,22 @@
 
 (define eval-exp-aux
   (lambda (exp env s k)
-    (pmatch exp
-      (,x (guard (symbol? x))
-       (apply-k k (answer (lookup env s x) s)))
-      ((quote ,datum) (guard (not-in-env 'quote env))
-       (apply-k k (answer datum s)))
-      ((call/cc ,e)
-       (eval-exp-aux e env s (call/cc-k k)))            
+    (dmatch exp
+      ((,rator ,rand)
+       (guard (not (and (memq rator '(quote list call/cc)) (not-in-env rator env))))
+       (eval-exp-aux rator env s (application-outer-k rand env k)))
       ((lambda (,x) ,body) (guard (not-in-env 'lambda env))
        (apply-k k (answer (make-proc x body env) s)))
-      ((set! ,x ,rhs) (guard (not-in-env 'set! env))
-       (eval-exp-aux rhs env s (set!-k x env k)))
+      (,x (guard (symbol? x))
+       (apply-k k (answer (lookup env s x) s)))   
+      ((quote ,datum) (guard (not-in-env 'quote env))
+       (apply-k k (answer datum s)))
       ((list . ,e*) (guard (not-in-env 'list env))
        (list-aux e* env s k))
-      ((,rator ,rand)
-       (eval-exp-aux rator env s (application-outer-k rand env k))))))
+      ((set! ,x ,rhs) (guard (not-in-env 'set! env))
+       (eval-exp-aux rhs env s (set!-k x env k)))
+      ((call/cc ,e)
+       (eval-exp-aux e env s (call/cc-k k))))))
 
 (define eval-exp
   (lambda (exp env s k)
