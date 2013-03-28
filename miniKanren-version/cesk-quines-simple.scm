@@ -39,32 +39,32 @@
   (define apply-ko
     (lambda (k^ v/s out)
       (conde
-        [(fresh (v s)
+        ((fresh (v s)
            (== empty-k k^)
            (== v/s out)
            (== (answer v s) v/s))
-         ]
-        [(fresh (p k a s^^)
+         )
+        ((fresh (p k a s^^)
            (== (application-inner-k p k) k^)
            (== (answer a s^^) v/s)
            (apply-proco p a s^^ k out)
-           )]
-        [(fresh (rand env k p s^)
+           ))
+        ((fresh (rand env k p s^)
            (== (application-outer-k rand env k) k^)
            (== (answer p s^) v/s)
            (eval-exp-auxo rand env s^ (application-inner-k p k) out)
-           )]
-        [(fresh (v k v* s^^ ans)
+           ))
+        ((fresh (v k v* s^^ ans)
            (== (list-aux-inner-k v k) k^)
            (== (answer v* s^^) v/s)
            (== (answer (cons v v*) s^^) ans)
-           (apply-ko k ans out))]
-        [(fresh (e* env k v s^ e*-rest ignore)
+           (apply-ko k ans out)))
+        ((fresh (e* env k v s^ e*-rest ignore)
            (== (list-aux-outer-k e* env k) k^)
            (== (answer v s^) v/s)
            (== `(,ignore . ,e*-rest) e*)
            (list-auxo e*-rest env s^ (list-aux-inner-k v k) out)
-           )])))
+           )))))
 
   (define empty-k '(empty-k))
 
@@ -87,43 +87,43 @@
   (define eval-exp-auxo
     (lambda (exp env s k out)
       (conde
-        [(fresh (datum ans)
+        ((fresh (datum ans)
            (== `(quote ,datum) exp)
            (== (answer datum s) ans)
            (absento 'closure datum)
            (not-in-envo 'quote env)
-           (apply-ko k ans out))]
-        [(fresh (x body ans)
+           (apply-ko k ans out)))
+        ((fresh (x body ans)
            (== `(lambda (,x) ,body) exp)
            (== (answer (make-proc x body env) s) ans)
            (not-in-envo 'lambda env)
            (symbolo x) ; interesting: adding this symbolo constraint increased the runtime by ~7%
-           (apply-ko k ans out))]
-        [(fresh (v ans)
+           (apply-ko k ans out)))
+        ((fresh (v ans)
            (symbolo exp)
            (== (answer v s) ans)
            (lookupo exp env s v)
-           (apply-ko k ans out))]
-        [(fresh (rator rand)
+           (apply-ko k ans out)))
+        ((fresh (rator rand)
            (== `(,rator ,rand) exp)
            (eval-exp-auxo rator env s (application-outer-k rand env k) out)
-           )]
-        [(fresh (e*)
+           ))
+        ((fresh (e*)
            (== `(list . ,e*) exp)
            (not-in-envo 'list env)
            (list-auxo e* env s k out)
-           )])))
+           )))))
 
   (define list-auxo
     (lambda (e* env s k out)
       (conde
-        [(fresh (ans)
+        ((fresh (ans)
            (== '() e*)
            (== (answer '() s) ans)
-           (apply-ko k ans out))]
-        [(fresh (e ignore)
+           (apply-ko k ans out)))
+        ((fresh (e ignore)
            (== `(,e . ,ignore) e*)
-           (eval-exp-auxo e env s (list-aux-outer-k e* env k) out))])))
+           (eval-exp-auxo e env s (list-aux-outer-k e* env k) out))))))
 
   (define eval-expo
     (lambda (exp env s k out)
