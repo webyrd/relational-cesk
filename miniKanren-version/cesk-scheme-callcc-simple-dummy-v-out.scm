@@ -52,7 +52,7 @@
           ]
         [(fresh (x env k v s^ addr s^^)
            (== (set!-k x env k) k^)
-           (== `(,v . ,s^) v/s)
+           (== (answer v s^) v/s)
            (numbero addr)
            (ext-storeo addr v s^ s^^)
            (lookup-env-only-auxo x env addr)
