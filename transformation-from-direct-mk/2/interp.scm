@@ -1,4 +1,4 @@
-;;; add store argument to 
+;;; add store argument to interpreter
 
 (load "mk.scm")
 
