@@ -1,5 +1,5 @@
-;;; original direct-style, environment-passing interpreter, with quote
-;;; and list, from 2012 Scheme Workshop quines paper.
+;;; add store argument (but no set! or call/cc yet), and return
+;;; (value . store) pairs as answers
 
 (load "mk.scm")
 
