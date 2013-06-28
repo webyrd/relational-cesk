@@ -1,5 +1,7 @@
 ;;; original direct-style, environment-passing interpreter, with quote
 ;;; and list, from 2012 Scheme Workshop quines paper.
+;;;
+;;; with updated mk.scm, which generalizes absento
 
 (load "mk.scm")
 
@@ -49,11 +51,11 @@
          (absento 'closure a*)
          (proper-listo a* env val)))
       ((symbolo exp) (lookupo exp env val))
-      ((fresh (rator rand x body env^ a)
+      ((fresh (rator rand x body env^ arg)
          (== `(,rator ,rand) exp)
          (eval-expo rator env `(closure ,x ,body ,env^))
-         (eval-expo rand env a)
-         (eval-expo body `((,x . ,a) . ,env^) val)))
+         (eval-expo rand env arg)
+         (eval-expo body `((,x . ,arg) . ,env^) val)))
       ((fresh (x body)
          (== `(lambda (,x) ,body) exp)
          (symbolo x)
