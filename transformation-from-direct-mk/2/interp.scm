@@ -1,5 +1,4 @@
-;;; add store argument (but no set! or call/cc yet), and return
-;;; (value . store) pairs as answers
+;;; add store argument
 
 (load "mk.scm")
 
