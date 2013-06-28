@@ -4,7 +4,7 @@ quine-generating interpreter to CESK machine.
 1) original direct-style, environment-passing interpreter, with quote
 and list, from 2012 Scheme Workshop quines paper
 
-2) add store argument
+2) add store argument to eval-expo
 
 3) return (value . store) pairs as answers
 
