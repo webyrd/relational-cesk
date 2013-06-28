@@ -1,4 +1,4 @@
-;;; add store argument
+;;; add store argument to 
 
 (load "mk.scm")
 

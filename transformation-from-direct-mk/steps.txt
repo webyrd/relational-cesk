@@ -10,8 +10,10 @@ and list, from 2012 Scheme Workshop quines paper
 
 4) add set! (but not call/cc yet)
 
-5) CPS interpreter
+5) update lookupo
 
-6) reconnect the wires
+6) CPS interpreter
 
-7) add call/cc (careful with the wires!)
+7) reconnect the wires
+
+8) add call/cc (careful with the wires!)
