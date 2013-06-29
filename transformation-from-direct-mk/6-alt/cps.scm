@@ -606,6 +606,42 @@
   
   )
 
+;; *** TODO
+;; RI
+
+(let ()
+
+  (define apply-ko
+    (lambda ()))
+  
+  (define appendo-cpso
+    (lambda (l s ko out)
+      (conde
+        [(== '() l) (ko s out)]
+        [(fresh (a d res)
+           (== `(,a . ,d) l)
+           (== `(,a . ,res) out)
+           (appendo-cpso d s ko res))])))
+
+  (define appendo
+    (lambda (l s out)
+      (appendo-cpso l s (lambda (v out^) (== out^ v)) out)))
+
+  (appendo-tests appendo "appendo-cpso-recur-at-end-ri")
+  
+  )
+
+;; *** TODO
+;; 1st order
+
+
+;; *** TODO
+;; try leaving k empty in call to 1st order rep.  What is the divergence behavior like?
+
+
+
+
+
 ;;; put appendo first
 
 ;; start

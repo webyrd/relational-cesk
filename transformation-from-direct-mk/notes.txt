@@ -1,3 +1,29 @@
+scheme append -> CPS -> miniKanrenize
+
+is not the same as
+
+scheme append -> miniKanrenize -> CPS
+
+because of goal reordering.  In the latter case, can place the recursive call to appendo last before CPSing (basically, we can pick which continuation we want to create--we can CPS for any goal ordering, with differences in divergence behavior, but not semantics).  In the first case, we are stuck because CPS of the Scheme function will ensure the call to appendo is in tail position, and construction of the "output list" occurs in the continuation.  This is why we need the reconnecting the wires trick.
+
+
+In othe words...
+
+*why CPS breaks the wire*:
+
+It's really about making sure recursive goals happen last.  You can ensure this happens if you miniKanrenize, then CPS.  In fact, every goal ordering has a meaningful CPS.  But if you CPS in Scheme, then miniKanrenize, the simple goals that could cause termination are now "trapped" in the continuation, and happen too late
+
+
+??? Does the reconnecting the wires technique work when CPSing in mK, when the appendo call isn't in tail position?
+
+??? Does miniKanrenizing, then CPSing, the interpreter help with the diverence behavior of call/cc? (where the reconnecting trick doesn't seem to work?)
+
+??? Nada asks is this approach of miniKanrenizing, then CPSing, helps with the problem of poor divergence behavior when k is unknown    Good question!   We might still be able to generate quines.  I suspect run* will often (always) divergerce, although perhaps there is a way around this.
+
+??? I still don't completely understand the role of the out^ argument to the continuation.  Seems to be used differently between code that is CPSed first vs code that is CPSed later. See appendo-cpso for apparent WATness.
+
+
+
 Commutativity diagram:
 
 direct-style Scheme prog        CPS->    CPS Scheme prog
@@ -37,57 +63,3 @@ direct-style Scheme prog    ANF->    ANF Scheme prog    CPS->    ANF CPS Scheme 
 ? How is re-connecting the wires related to the two approaches?
 
 ? what are the formal rules/algorithms for reconnecting the wires?
-
-
-
-
-
-
-
-
-Compare:
----
-;;; appendo (sort of ANF already) CPSed
-(define appendo-cpso
-  (lambda (l s ko out)
-    (conde
-      [(== '() l) (ko s out)]
-      [(fresh (a d res)
-         (== `(,a . ,d) l)
-         (appendo-cps d s (lambda (v out^)
-                            (ko `(,a . ,res) out)) ; weird.  Do I just ignore v and out^?  They seem extraneous
-                                                   ; is reconnecting the wires somehow equivalent to unifying (== out^ out) and/or (== v res)???  Should check divergence behavior, and compare with behavior of append-anf-cpso.  Also, try reconnecting the wires in append-anf-cpso: is this equivalent to (== out^ out)?
-                      res))])))
-
-(define appendo
-  (lambda (l s out)
-    (appendo-cpso l s (lambda (v out^) (== out^ v)) out)))
----
-
-with
-
----
-;;; append, in ANF, then CPSed, then converted to mk
-(define append-anf-cpso
-  (lambda (l s ko out)
-    (conde
-      [(== '() l) (ko s out)]
-      [(fresh (a d)
-         (== `(,a . ,d) l)
-         (append-anf-cpso d s (lambda (v out^)
-                                (ko `(,a . ,v) out^))
-                          out))])))
-
-(define append-anfo
-  (lambda (l s out)
-    (append-anf-cpso l s (lambda (v out^) (== out^ v)) out)))
----
-
-Note the difference in new continuation in the bodies.  v and out^ are
-both used in append-anf-cpso.  Neither arguments are used in
-appendo-cpso, however.  I suspect that unifying (== out^ out) in
-appendo-cpso is equivalent to reconnecting the wires in the
-append-anf-cpso version.  If so, what would (== v res) do in
-appendo-cpso?  Also, is one approach better than the other?  Would the
-appendo-cpso approach make it clearer, or better, when dealing with
-'call/cc' in the interpreter?
