@@ -157,7 +157,7 @@
            
       )))
 
-;;;;;;;
+;;;;;;; vanilla append/appendo
 
 (let ()
   
@@ -190,7 +190,7 @@
   )
 
 
-;;;;;;;
+;;;;;;; ANF append/appendo
 
 (let ()
 
@@ -228,7 +228,7 @@
 
 
 
-;;;;;
+;;;;; CPS append/appendo
 
 ; Higher-order k
 
@@ -354,6 +354,13 @@
   'dummy-exp
   
   )
+
+;;; *** TODO
+;;; try reconnecting wires trick
+
+
+
+
 
 
 ;;; h-o, CPSing appendo      continuation goal ko takes a value and an out^
@@ -561,6 +568,11 @@
   'dummy-exp
 
   )
+
+;;; *** TODO
+;;; try reconnecting wires trick
+
+
 
 
 ;; put appendo at the end
