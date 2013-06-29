@@ -1,0 +1,93 @@
+Commutativity diagram:
+
+direct-style Scheme prog        CPS->    CPS Scheme prog
+         |                                     |
+	 |                                     |
+   miniKanrenize->                       miniKanrenize->
+         |                                     |
+	 |                                     |
+unnested mk prog	        CPS->       mk CPS prog
+(not really direct style)
+
+Doesn't seem to quite work the same, since unnesting is similar to ANF
+
+
+This may be more correct:
+
+direct-style Scheme prog    ANF->    ANF Scheme prog    CPS->    ANF CPS Scheme prog
+         |                                   |                           |
+	 |                                   |                           |
+   miniKanrenize->                    miniKanrenize->              miniKanrenize->
+         |                                   |                           |
+	 |                                   |                           |
+   unnested mk prog                  unnested mk prog	 CPS->    mk unnested CPS prog
+   (similar to ANF)
+           [? are these two mk progs identical?]
+
+
+
+? Does ANF break the wires?  Or only CPS?  Why?  [looks like only CPS]
+
+? Do we end up with an equivalent mk CPS prog with both approaches?
+
+? What is the right way to CPS an mk program?  Do both higher-order and first order continuation representations make sense?  Would k be a goal?  What is the connection between the out variable and k?  Are they the same thing?  Exactly what does a continuation represent?  How does reordering goals/independence of goal ordering interact with CPS?  We already did an unnesting step, which is reminiscent of ANF--are we really going from ANF to CPS?  Was the ordering in a sense fixed during the ANF step?
+
+? Is CPSing an mk program related to, or identical to, re-connecting the wires somehow?
+
+? How is re-connecting the wires related to the two approaches?
+
+
+
+
+
+
+
+
+
+
+Compare:
+---
+;;; appendo (sort of ANF already) CPSed
+(define appendo-cpso
+  (lambda (l s ko out)
+    (conde
+      [(== '() l) (ko s out)]
+      [(fresh (a d res)
+         (== `(,a . ,d) l)
+         (appendo-cps d s (lambda (v out^)
+                            (ko `(,a . ,res) out)) ; weird.  Do I just ignore v and out^?  They seem extraneous
+                                                   ; is reconnecting the wires somehow equivalent to unifying (== out^ out) and/or (== v res)???  Should check divergence behavior, and compare with behavior of append-anf-cpso.  Also, try reconnecting the wires in append-anf-cpso: is this equivalent to (== out^ out)?
+                      res))])))
+
+(define appendo
+  (lambda (l s out)
+    (appendo-cpso l s (lambda (v out^) (== out^ v)) out)))
+---
+
+with
+
+---
+;;; append, in ANF, then CPSed, then converted to mk
+(define append-anf-cpso
+  (lambda (l s ko out)
+    (conde
+      [(== '() l) (ko s out)]
+      [(fresh (a d)
+         (== `(,a . ,d) l)
+         (append-anf-cpso d s (lambda (v out^)
+                                (ko `(,a . ,v) out^))
+                          out))])))
+
+(define append-anfo
+  (lambda (l s out)
+    (append-anf-cpso l s (lambda (v out^) (== out^ v)) out)))
+---
+
+Note the difference in new continuation in the bodies.  v and out^ are
+both used in append-anf-cpso.  Neither arguments are used in
+appendo-cpso, however.  I suspect that unifying (== out^ out) in
+appendo-cpso is equivalent to reconnecting the wires in the
+append-anf-cpso version.  If so, what would (== v res) do in
+appendo-cpso?  Also, is one approach better than the other?  Would the
+appendo-cpso approach make it clearer, or better, when dealing with
+'call/cc' in the interpreter?

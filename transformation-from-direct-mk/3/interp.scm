@@ -4,41 +4,37 @@
 
 ;;; helpers
 
-;;; improved lookupo
+;;; improved lookupo, for better divergence behavior: |env| <= |store|
 
 (define lookupo
   (lambda (x env store t)
     (fresh (addr)
       (symbolo x)
       (numbero addr)
-      (lookup-env-auxo x env store addr)
+      (lookup-env-auxo x env store addr) ; lookup-env-auxo now takes store as an arg
       (lookup-store-auxo addr store t))))
 
 (define lookup-env-auxo
-  (lambda (x env store t)
-    (fresh (y y* addr-e addr-e* addr-s addr-s* v-s v-s*)      
-      (== `((,y . ,y*) (,addr-e . ,addr-e*)) env)
-      (== `((,addr-s . ,addr-s*) (,v-s . ,v-s*)) store)
+  (lambda (x env store addr)
+    (fresh (y a rest ignore rest-s)
+      (== `((,y . ,a) . ,rest) env)
+      (== `(,ignore . ,rest-s) store)
       (symbolo x)
       (symbolo y)
-      (numbero t)
-      (numbero addr-e)
-      (numbero addr-s)
-      (conde
-        ((== y x) (== addr-e t))
-        ((=/= y x)
-         (lookup-env-auxo x `(,y* ,addr-e*) `(,addr-s* ,v-s*) t))))))
-
-(define lookup-store-auxo
-  (lambda (addr store t)
-    (fresh (addr-s addr-s* v-s v-s*)
-      (== `((,addr-s . ,addr-s*) (,v-s . ,v-s*)) store)
       (numbero addr)
-      (numbero addr-s)
       (conde
-        ((== addr-s addr) (== v-s t))
-        ((=/= addr-s addr)
-         (lookup-store-auxo addr `(,addr-s* ,v-s*) t))))))
+        ((== y x) (== a addr))
+        ((=/= y x) (lookup-env-auxo x rest rest-s addr))))))
+
+(define lookup-store-auxo ; this defn shouldn't change from last step
+  (lambda (addr store t)
+    (fresh (a v rest)
+      (== `((,a . ,v) . ,rest) store)
+      (numbero addr)
+      (numbero a)
+      (conde
+        ((== a addr) (== v t))
+        ((=/= a addr) (lookup-store-auxo addr rest t))))))
 
 ;;;
 
@@ -78,10 +74,9 @@
          (absento 'closure a*)
          (proper-listo a* env store val/store)))
       ((symbolo exp)
-       (fresh (val addr)
+       (fresh (val)
          (== `(,val . ,store) val/store)
-         (lookupo exp env addr)
-         (lookupo addr store val)))
+         (lookupo exp env store val)))
       ((fresh (rator rand x body env^ arg addr store-rator store-rand)
          (== `(,rator ,rand) exp)
          (eval-expo rator env store `((closure ,x ,body ,env^) . ,store-rator))

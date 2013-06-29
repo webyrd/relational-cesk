@@ -79,6 +79,69 @@
   (run* (q) (eval-expo quinec '() '() q))
   '(((((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x)))) . ((_.0 . (lambda (x) (list x (list 'quote x)))))) (num _.0))))
 
+
+;;;
+
+(test-check "improved-lookupo-0"
+  (run 1 (q) (lookupo 'x '() '() q))
+  '())
+
+(test-check "improved-lookupo-1"
+  (run 1 (q) (lookupo 'x '((w . 0) (x . 1) (y . 2)) '((0 . foo) (1 . bar) (2 . baz)) q))
+  '(bar))
+
+(test-check "improved-lookupo-2"
+  (run* (q) (lookupo 'x '((w . 0) (x . 1) (y . 2)) '((0 . foo) (1 . bar) (2 . baz)) q))
+  '(bar))
+
+(test-check "improved-lookupo-6"
+  (run 1 (q) (lookupo q '((w . 0) (x . 1) (y . 2)) '((0 . foo) (1 . bar) (2 . baz)) 'foo))
+  '(w))
+
+(test-check "improved-lookupo-7"
+  (run 2 (q) (lookupo q '((w . 0) (x . 1) (y . 2)) '((0 . foo) (1 . bar) (2 . baz)) 'foo))
+  '(w))
+
+(test-check "improved-lookupo-8"
+  (run 1 (q) (lookupo q '((w . 0) (x . 1) (y . 2)) '((0 . foo) (1 . bar) (2 . baz)) 'quux))
+  '())
+
+(test-check "improved-lookupo-9"
+  (run 1 (q) (lookupo 'x '((w . 0) (y . 2)) '((0 . foo) (1 . bar) (2 . baz)) q))
+  '())
+
+(test-check "improved-lookupo-10"
+  (run 1 (q) (lookupo 'x '((w . 0) (x . 1) (y . 2)) '((0 . foo) (2 . baz)) q))
+  '())
+
+(test-check "improved-lookupo-12"
+  (run 1 (q) (lookupo 'x '((w . 0) (x . 1) (y . 2)) `((1 . foo) . ,q) 'baz))
+  '())
+
+;; Diverges!!
+;;
+;; (test-check "improved-lookupo-13"
+;; ;;; this test-check diverges using naive lookupo
+;;   (run 1 (q) (lookupo 'x `((w . 0) . ,q) '((1 . foo) (2 . bar)) 'baz))
+;;   '())
+
+;; Diverges!!
+;;
+;; (test-check "improved-lookupo-13a"
+;;   (run* (q) (lookupo 'x `((w . 0) . ,q) '((1 . foo) (2 . bar)) 'bar))
+;;   '(((x . 2) . _.0)))
+
+(test-check "improved-lookupo-14"
+  (run 1 (q)
+    (fresh (rest-e rest-s)
+      (lookupo 'w `((w . 0) . ,rest-e) `((0 . foo) . ,rest-s) 'baz)
+      (== `(,rest-e ,rest-s) q)))
+  '())
+
+;;;
+
+
+
 (test-check "intro-2"
 ;;; appears to diverge, due to lookupo
   (run 1 (q) (eval-expo q '() '() q))

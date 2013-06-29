@@ -9,21 +9,52 @@
 
 ;;; updated lookupo
 
+;;; possible intermediate step
+;;
+;; (define lookupo
+;;   (lambda (x env store t)
+;;     (fresh (addr)
+;;       (symbolo x)
+;;       (numbero addr)
+;;       (lookup-auxo x env addr)
+;;       (lookup-auxo addr store t))))
+
+;; (define lookup-auxo
+;;   (lambda (x alist t)
+;;     (fresh (y v rest)
+;;       (== `((,y . ,v) . ,rest) alist)
+;;       (conde
+;;         ((== y x) (== v t))
+;;         ((=/= y x) (lookup-auxo x rest t))))))
+
 (define lookupo
   (lambda (x env store t)
     (fresh (addr)
       (symbolo x)
       (numbero addr)
-      (lookup-auxo x env addr)
-      (lookup-auxo addr store t))))
+      (lookup-env-auxo x env addr)
+      (lookup-store-auxo addr store t))))
 
-(define lookup-auxo
-  (lambda (x alist t)
-    (fresh (y v rest)
-      (== `((,y . ,v) . ,rest) alist)
+(define lookup-env-auxo
+  (lambda (x env addr)
+    (fresh (y a rest)
+      (== `((,y . ,a) . ,rest) env)
+      (symbolo x)
+      (symbolo y)
+      (numbero addr)
       (conde
-        ((== y x) (== v t))
-        ((=/= y x) (lookup-auxo x rest t))))))
+        ((== y x) (== a addr))
+        ((=/= y x) (lookup-env-auxo x rest addr))))))
+
+(define lookup-store-auxo
+  (lambda (addr store t)
+    (fresh (a v rest)
+      (== `((,a . ,v) . ,rest) store)
+      (numbero addr)
+      (numbero a)
+      (conde
+        ((== a addr) (== v t))
+        ((=/= a addr) (lookup-store-auxo addr rest t))))))
 
 ;;;
 

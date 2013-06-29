@@ -79,6 +79,20 @@
   (run* (q) (eval-expo quinec '() q))
   '(((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))))
 
+(test-check "quinec-backwards-1"
+  (run 5 (q) (eval-expo q '() quinec))
+  '('((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))
+    (list '(lambda (x) (list x (list 'quote x))) ''(lambda (x) (list x (list 'quote x))))
+    (((lambda (_.0) '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))) '_.1) (=/= ((_.0 quote))) (sym _.0) (absento (closure _.1)))
+    (((lambda (_.0) _.0) '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))) (sym _.0))
+    (((lambda (_.0) '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))) (list)) (=/= ((_.0 quote))) (sym _.0))))
+
+(test-check "quinec-backwards-2"
+  (run 1 (q)
+    (eval-expo q '() quinec)
+    (== quinec q))
+  '(((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))))
+
 (test-check "intro-2"
 ;;; appears to diverge, due to lookupo  
   (equal? (replace* '((_.0 . x)) (car (car (run 1 (q) (eval-expo q '() q))))) quinec)

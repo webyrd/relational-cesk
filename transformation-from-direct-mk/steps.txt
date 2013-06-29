@@ -1,3 +1,6 @@
+*** very confusing:  adding a store seems to cause quines to no longer run backwards.  Why?  quines still evaluate going forwards.
+
+
 Transformation steps, from direct-style environment-passing
 quine-generating interpreter to CESK machine.
 
@@ -20,13 +23,15 @@ and to use symbolo and numbero constraints
 
 Is there anything to this?
 
-4) add set!
+5) add set!
 
-5) CPS interpreter
+6) CPS interpreter
 
-6) reconnect the wires
+7) reconnect the wires
 
-7) add call/cc (careful with the wires!)
+8) add call/cc (careful with the wires!)
+
+
 
 
 
