@@ -21,7 +21,7 @@ direct-style Scheme prog    ANF->    ANF Scheme prog    CPS->    ANF CPS Scheme 
          |                                   |                           |
 	 |                                   |                           |
    unnested mk prog                  unnested mk prog	 CPS->    mk unnested CPS prog
-   (similar to ANF)
+   (similar to ANF)               **??? WAT iz dis???**
            [? are these two mk progs identical?]
 
 
@@ -36,7 +36,7 @@ direct-style Scheme prog    ANF->    ANF Scheme prog    CPS->    ANF CPS Scheme 
 
 ? How is re-connecting the wires related to the two approaches?
 
-
+? what are the formal rules/algorithms for reconnecting the wires?
 
 
 
