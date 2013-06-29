@@ -22,7 +22,7 @@ direct-style Scheme prog    ANF->    ANF Scheme prog    CPS->    ANF CPS Scheme 
 	 |                                   |                           |
    unnested mk prog                  unnested mk prog	 CPS->    mk unnested CPS prog
    (similar to ANF)               **??? WAT iz dis???**
-           [? are these two mk progs identical?]
+         [? are these two mk progs identical?]
 
 
 
