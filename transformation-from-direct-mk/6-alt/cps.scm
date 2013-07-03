@@ -174,6 +174,7 @@
 
 (let ()
 
+;;; recursive appendo call must come last, or some tests will diverge
   (define appendo
     (lambda (l s out)
       (conde
@@ -182,7 +183,6 @@
         [(fresh (a d res)
            (== `(,a . ,d) l)
            (== `(,a . ,res) out)
-;;; appendo must come last, or some tests will diverge           
            (appendo d s res))])))
 
   (appendo-tests appendo "vanilla-appendo")
@@ -263,7 +263,8 @@
         [(fresh (a d)
            (== `(,a . ,d) l)
            (append-cpso d s (lambda (res out^) ; all continuations take an out^ argument
-                              (k `(,a . ,res) out^)) out))])))
+                              (k `(,a . ,res) out^))
+                        out))])))
 
   (define appendo
     (lambda (l s out)

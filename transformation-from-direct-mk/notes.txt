@@ -22,6 +22,8 @@ It's really about making sure recursive goals happen last.  You can ensure this 
 
 ??? I still don't completely understand the role of the out^ argument to the continuation.  Seems to be used differently between code that is CPSed first vs code that is CPSed later. See appendo-cpso for apparent WATness.
 
+??? Could I then trampoline the CPSed miniKanren interpreter? (Or appendo?)  What would that mean?  Would that be useful?  Could that give me different search behavior?  Could that be useful for metaprogramming?
+
 
 
 Commutativity diagram:
@@ -30,9 +32,9 @@ direct-style Scheme prog        CPS->    CPS Scheme prog
          |                                     |
 	 |                                     |
    miniKanrenize->                       miniKanrenize->
-         |                                     |
+         |                                     | * reconnecting the wires *
 	 |                                     |
-unnested mk prog	        CPS->       mk CPS prog
+unnested mk prog	* reorder goals *     CPS->       mk CPS prog
 (not really direct style)
 
 Doesn't seem to quite work the same, since unnesting is similar to ANF
