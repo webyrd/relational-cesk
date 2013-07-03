@@ -96,6 +96,29 @@
       (run* (q) (eval-expo '((lambda (quote) (quote (lambda (x) x))) (lambda (y) y)) '() q))
       '((closure x x ((quote . (closure y y ()))))))
 
+    (test-check "backwards-1"
+      (run 3 (q)
+        (eval-expo q '() '(closure y y ())))
+      '((lambda (y) y)
+        (((lambda (_.0) _.0) (lambda (y) y)) (sym _.0))
+        (((lambda (_.0) (_.0 _.0)) (lambda (y) y)) (sym _.0))))
+
+    (test-check "backwards-2"
+      (run 10 (q)
+        (fresh (exp env val)
+          (eval-expo exp env val)
+          (== `(,exp ,env ,val) q)))
+      '((('_.0 () _.0) (absento (closure _.0)))
+        (('_.0 ((_.1 . _.2)) _.0) (=/= ((_.1 quote))) (absento (closure _.0)))
+        (('_.0 ((_.1 . _.2) (_.3 . _.4)) _.0) (=/= ((_.1 quote)) ((_.3 quote))) (absento (closure _.0)))
+        ((list) () ())
+        ((_.0 ((_.0 . _.1) . _.2) _.1) (sym _.0))
+        (('_.0 ((_.1 . _.2) (_.3 . _.4) (_.5 . _.6)) _.0) (=/= ((_.1 quote)) ((_.3 quote)) ((_.5 quote))) (absento (closure _.0)))
+        (('_.0 ((_.1 . _.2) (_.3 . _.4) (_.5 . _.6) (_.7 . _.8)) _.0) (=/= ((_.1 quote)) ((_.3 quote)) ((_.5 quote)) ((_.7 quote))) (absento (closure _.0)))
+        (('_.0 ((_.1 . _.2) (_.3 . _.4) (_.5 . _.6) (_.7 . _.8) (_.9 . _.10)) _.0) (=/= ((_.1 quote)) ((_.3 quote)) ((_.5 quote)) ((_.7 quote)) ((_.9 quote))) (absento (closure _.0)))
+        (('_.0 ((_.1 . _.2) (_.3 . _.4) (_.5 . _.6) (_.7 . _.8) (_.9 . _.10) (_.11 . _.12)) _.0) (=/= ((_.1 quote)) ((_.11 quote)) ((_.3 quote)) ((_.5 quote)) ((_.7 quote)) ((_.9 quote))) (absento (closure _.0)))
+        ((_.0 ((_.1 . _.2) (_.0 . _.3) . _.4) _.3) (=/= ((_.0 _.1))) (sym _.0))))
+    
     (test-check "intro-2"
       (equal? (replace* '((_.0 . x)) (car (car (run 1 (q) (eval-expo q '() q))))) quinec)
       #t)
