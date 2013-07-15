@@ -98,6 +98,22 @@
       (test-check (string-append "rember*o-5-" name)
         (run 1 (q) (rember*o 'y '(a (z y ((x y) z y) y) () (()) ((x)) z (((y)))) q))
         '((a (z ((x) z)) () (()) ((x)) z ((())))))
+
+
+      (test-check (string-append "rember*o-0-" name)
+        (run* (q) (rember*o 'y '() '()))
+        '(_.0))
+
+      (test-check (string-append "rember*o-1-" name)
+        (run* (q) (rember*o 'y '() q))
+        '(()))
+
+      (test-check (string-append "rember*o-2-" name)
+        (run* (q) (rember*o 'y '(a z y x y y z y) q))
+        '((a z x z)))
+
+;;; *** TODO add more tests to make code diverge when not using reconnecting trick
+      
       
       )))
 
@@ -260,6 +276,7 @@
              [(== x y) (rember*o-cps x d k)]
              [(=/= x y)
               (rember*o-cps x d (lambda (v)
+                                  ;; **** TODO do I need to reconnect the wires here as well?
                                   (k `(,y . ,v))))]))])))
 
   (define rember*o

@@ -239,7 +239,8 @@
 
                                 (== res v)
 
-                                (k `(,a . ,v))))))])))
+                                (k `(,a . ,v))
+                                ))))])))
 
   (define appendo
     (lambda (l s out)
