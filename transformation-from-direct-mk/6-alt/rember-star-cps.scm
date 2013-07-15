@@ -59,6 +59,10 @@
   (lambda (rember*o name)
     (let ()
 
+      (test-check (string-append "rember*o-0-" name)
+        (run 1 (q) (rember*o 'y '() '()))
+        '(_.0))
+      
       (test-check (string-append "rember*o-1-" name)
         (run 1 (q) (rember*o 'y '() q))
         '(()))
@@ -237,7 +241,7 @@
            (conde
              [(== `(,aa . ,da) a)]
              [(== '() a)])
-           (k `(,res-a . ,res-d) out)
+           (k `(,res-a . ,res-d))
            (rember*o-cps x a (lambda (v)
                                (fresh ()
 
@@ -248,7 +252,7 @@
                                                        
                                                        (== v^ res-d)
                                                        
-                                                       (k `(,res-a . ,res-d) out))))))))]
+                                                       (k `(,res-a . ,res-d)))))))))]
         [(fresh (y d)
            (== `(,y . ,d) t)
            (symbolo y)
@@ -260,9 +264,9 @@
 
   (define rember*o
     (lambda (x t out)
-      (rember*o x t (lambda (v) (== out v)))))
+      (rember*o-cps x t (lambda (v) (== out v)))))
   
- (rember*o-tests rember*o "CPS in miniKanren")
+  (rember*o-tests rember*o "CPS in miniKanren, with shortcuts")
   
   )
 
@@ -293,9 +297,9 @@
 
   (define rember*o
     (lambda (x t out)
-      (rember*o x t (lambda (v) (== out v)))))
+      (rember*o-cps x t (lambda (v) (== out v)))))
   
- (rember*o-tests rember*o "CPS in miniKanren")
+  (rember*o-tests rember*o "CPS in miniKanren")
   
   )
 
